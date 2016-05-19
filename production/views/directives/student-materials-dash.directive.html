@@ -1,0 +1,41 @@
+
+<div class="card">
+
+    <div class="header row">
+        <h4 class="title col-md-6"><a class="" ui-sref="app.student-materials({'userId':userId})">Materials</a></h4>
+        <button class="btn btn-sm btn-info pull-right col-md-3 margin-10" ng-click="open({})"><i class="ti-plus"/> Add Material</button>
+        <p class="category col-md-7">Here is a subtitle for materials</p>
+    </div>
+
+    <div class="content table-responsive table-full-width">
+
+        <table class="table table-hover">
+            <thead>
+                <th>Date</th>
+            	<th>Material</th>
+            	<th>Notes</th>
+            	<th></th>
+            </thead>
+            <tbody>
+				<tr ng-repeat="material in materials | orderBy: '-material_added' | limitTo : 3">
+					<td class="width-20">{{material.material_added | date:"MMM d, y"}}</td>
+					<td class="width-30">
+						<a href="{{path}}{{material.file}}" target="_blank">{{material.material_name | limitTo: 15}}<span ng-if="material.material.length > 15">...</span></a>
+					</td>
+					<td class="width-30">
+						{{material.material_notes | limitTo: 55}}<span ng-if="material.material_notes.length > 55">...</span>
+					</td>
+					<td class="width-20">
+						<button type="button" class="btn btn-warning btn-link" ng-click="open(material)"><i class="ti-pencil"/></button>
+						<button type="button" class="btn btn-danger btn-link" ng-click="deleteMaterial(material);"><i class="ti-trash"/></button>
+					</td>
+				</tr>
+				<tr class="" ng-if="materials.length < 1">
+					<td class="text-warning">No Materials. Add one!</td>
+				</tr>
+            </tbody>
+        </table>
+
+    </div>
+    
+</div>

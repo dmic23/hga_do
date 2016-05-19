@@ -1,0 +1,44 @@
+
+<div class="card">
+
+    <div class="header row">
+        <h4 class="title col-md-6"><a class="" ui-sref="app.student-wishlist({'userId':userId})">Wish List</a></h4>
+        <button class="btn btn-sm btn-info pull-right col-md-3 margin-10" ng-click="open({})"><i class="ti-plus"/> Add Wish</button>
+        <p class="category col-md-7">Here is a subtitle for wish list</p>
+    </div>
+
+    <div class="content table-responsive table-full-width">
+
+        <table class="table table-hover">
+            <thead>
+                <th>Wish</th>
+            	<th>Wish Notes</th>
+            	<th>Complete</th>
+            </thead>
+            <tbody>
+				<tr ng-repeat="wish in filteredWishLists = (wishLists | filter: wish_item_complete == 'false' | orderBy: 'wish_item_created' | limitTo : 3)" name="studentWishListForm"  ng-form novalidate>
+					<td class="width-30">
+						{{wish.wish_item | limitTo: 35}}<span ng-if="wish.wish_item.length > 35">...</span>
+					</td>
+					<td class="width-30">
+						{{wish.wish_item_notes | limitTo: 55}}<span ng-if="wish.wish_item_notes.length > 55">...</span>
+					</td>
+					<td class="width-20">
+						<button type="submit" name="wish_item_complete" class="btn btn-default btn-link" ng-click="wish.wish_item_complete = !wish.wish_item_complete; updateWishItem({'id':wish.id, 'wish_item_complete':wish.wish_item_complete});" ng-model="wish.wish_item_complete">
+							<i ng-class="wish.wish_item_complete ? 'ti-check text-success' : 'ti-layout-sidebar-none text-info'" aria-hidden="true"></i>
+						</button>
+					</td>
+					<td class="width-20">
+						<button type="button" class="btn btn-warning btn-link" ng-click="open(wish)"><i class="ti-pencil"/></button>
+						<button type="button" class="btn btn-danger btn-link" ng-click="deleteWishItem(wish);"><i class="ti-trash"/></button>
+					</td>
+				</tr>
+				<tr ng-if="filteredWishLists.length < 1">
+					<td class="text-warning">No Wishes. Add one!</td>
+				</tr>
+            </tbody>
+        </table>
+
+    </div>
+    
+</div>

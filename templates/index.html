@@ -1,0 +1,38 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" ng-app="hga">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0' name='viewport' />
+    <meta name="viewport" content="width=device-width" />
+	<title>Hirsch Guitar Academy</title>
+
+	<link rel="stylesheet" href="{% static 'css/bower.min.css' %}">
+	<link rel="stylesheet" href="{% static 'css/main.min.css' %}">
+
+	<link href="http://maxcdn.bootstrapcdn.com/font-awesome/latest/css/font-awesome.min.css" rel="stylesheet">
+	<link href='https://fonts.googleapis.com/css?family=Muli:400,300' rel='stylesheet' type='text/css'>
+
+</head>
+<body>
+	<div class="wrapper" ui-view></div>
+
+<script>
+	var staticUrl = '{{ STATIC_URL|escapejs }}';
+	var mediaUrl  = '{{ MEDIA_URL|escapejs }}';
+
+	function static_path(path) {
+		return staticUrl + path;
+	};
+
+	function media_path(path) {
+		return mediaUrl + path;
+	};
+
+</script>
+
+	<script src="{% static 'js/bower.min.js' %}"></script>
+	<script src="{% static 'js/main.min.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+
+<div class="card">
+
+    <div class="header row">
+        <h4 class="title col-md-6"><a class="" ui-sref="app.student-goal({'userId':userId})">Student Goals</a></h4>
+        <button class="btn btn-sm btn-info pull-right col-md-3 margin-10" ng-if="(goals | filter: goal_complete == 'false').length <= 2" ng-click="open({})"><i class="ti-plus"/> Add Goal</button>
+        <p class="category col-md-7">Here is a subtitle for goals</p>
+    </div>
+
+    <div class="content table-responsive table-full-width">
+
+        <table class="table table-hover">
+            <thead>
+                <th>Goal</th>
+            	<th>Target Date</th>
+            	<th>Complete</th>
+            </thead>
+            <tbody>
+				<tr ng-repeat="goal in filteredGoals = (goals | filter: goal_complete == 'false' | orderBy: 'goal_target_date' | limitTo : 3)" name="studentGoalForm" ng-form novalidate>
+					<td class="width-30">
+						{{goal.goal | limitTo: 35}}<span ng-if="goal.goal.length > 35">...</span>
+					</td>
+					<td class="width-30">{{goal.goal_target_date | date:"MMM d, y"}}
+					</td>
+					<td class="width-20">
+						<button type="submit" name="goal_complete" class="btn btn-default btn-link" ng-click="goal.goal_complete = !goal.goal_complete; updateGoal({'id':goal.id, 'goal_complete':goal.goal_complete});" ng-model="goal.goal_complete">
+							<i ng-class="goal.goal_complete ? 'ti-check text-success' : 'ti-layout-sidebar-none text-info'" aria-hidden="true"></i>
+						</button>
+					</td>
+					<td class="width-20">
+						<button type="button" class="btn btn-warning btn-link" ng-click="open(goal)"><i class="ti-pencil"/></button>
+						<button type="button" class="btn btn-danger btn-link" ng-click="deleteGoal(goal);"><i class="ti-trash"/></button>
+					</td>
+				</tr>
+				<tr ng-if="filteredGoals.length < 1">
+					<td class="text-warning">No Goals. Add one!</td>
+				</tr>
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
