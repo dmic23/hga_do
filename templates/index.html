@@ -20,13 +20,17 @@
 
 <script>
 	var staticUrl = '{{ STATIC_URL|escapejs }}';
+	console.log(staticUrl);
 	var mediaUrl  = '{{ MEDIA_URL|escapejs }}';
+	console.log(mediaUrl);
 
 	function static_path(path) {
+		console.log(staticUrl + path);
 		return staticUrl + path;
 	};
 
 	function media_path(path) {
+		console.log(mediaUrl + path);
 		return mediaUrl + path;
 	};
 
