@@ -1,0 +1,22 @@
+
+<div class="modal-header">
+	<h3 class="modal-title">{{vm.modalTitle}}</h3>
+</div>
+<div class="modal-body row">
+
+	<form name="newWishItemForm" ng-submit="vm.submitWishItem(vm.newWishItem)" novalidate>
+		<div class="form-group col-md-6">
+			<label class="" for="wish_item">Wish</label>
+			<input type="text" name="wish_item" class="form-control border-input" placeholder="Wish" ng-model="vm.newWishItem.wish_item"/>
+		</div>
+		<div class="form-group col-md-12">
+			<label for="wish_item_notes">Wish Notes</label>
+			<textarea class="form-control border-input" rows="2" placeholder="Wish Notes" name="wish_item_notes" ng-model="vm.newWishItem.wish_item_notes"></textarea>
+		</div>
+		<div class="col-md-6">
+			<button class="btn btn-danger margin-10" type="button" ng-click="vm.closeModal()">Cancel</button>
+			<button class="btn btn-primary margin-10" type="submit">Submit</button>		
+		</div>
+	</form>
+
+</div>

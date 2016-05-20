@@ -1,0 +1,47 @@
+
+<div class="card">
+
+    <div class="header row">
+        <h4 class="title col-md-6"><a class="" ui-sref="app.student-objective({'userId':userId})">Student Objectives</a></h4>
+        <button class="btn btn-sm btn-info pull-right col-md-3 margin-10" ng-click="open({})" ng-if="authAcct.is_staff"><i class="ti-plus"/> Add Objective</button>
+        <p class="category col-md-7">Here is a subtitle for objectives</p>
+    </div>
+
+    <div class="content table-responsive table-full-width">
+
+        <table class="table table-hover">
+            <thead>
+                <th>Objective</th>
+            	<th>Objective Notes</th>
+            	<th>Complete</th>
+            </thead>
+            <tbody>
+				<tr ng-repeat="objective in filteredObjectives = (objectives | filter: objective_complete == 'false' | orderBy: 'objective_created' | limitTo : 3)" name="studentObjectiveForm"  ng-form novalidate>
+					<td class="width-30">
+						{{objective.objective | limitTo: 35}}<span ng-if="objective.objective.length > 35">...</span>
+					</td>
+					<td class="width-30">
+						{{objective.objective_notes | limitTo: 55}}<span ng-if="objective.objective_notes.length > 55">...</span>
+					</td>
+					<td class="width-20" ng-if="authAcct.is_staff">
+						<button type="submit" name="objective_complete" class="btn btn-default btn-link" ng-click="objective.objective_complete = !objective.objective_complete; updateObjective({'id':objective.id, 'objective_complete':objective.objective_complete});" ng-model="objective.objective_complete">
+							<i ng-class="objective.objective_complete ? 'ti-check text-success' : 'ti-layout-sidebar-none text-info'" aria-hidden="true"></i>
+						</button>
+					</td>
+					<td class="width-20" ng-if="!authAcct.is_staff">
+						<i ng-class="objective.objective_complete ? 'ti-check text-success' : 'ti-layout-sidebar-none text-info'" aria-hidden="true"></i>
+					</td>
+					<td class="width-20" ng-if="authAcct.is_staff">
+						<button type="button" class="btn btn-warning btn-link" ng-click="open(objective)"><i class="ti-pencil"/></button>
+						<button type="button" class="btn btn-danger btn-link" ng-click="deleteObjective(objective);"><i class="ti-trash"/></button>
+					</td>
+				</tr>
+				<tr ng-if="filteredObjectives.length < 1">
+					<td class="text-warning">No objectives. Add one!</td>
+				</tr>
+            </tbody>
+        </table>
+
+    </div>
+    
+</div>

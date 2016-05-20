@@ -1,0 +1,19 @@
+
+<div class="row" ng-if="vm.authAcct.is_staff">
+    <div class="col-md-3">
+        <p>Back to <a ui-sref="app.dashboard({userId:vm.user.id})">Dashboard</a></p>
+    </div>
+</div>
+
+<div class="row">
+	<div class="col-md-12 text-center">
+		<h2 class="title margin-tb-10">Student Wish List</h2>
+		<p class="category margin-tb-20">for <a ui-sref="app.profile({userId:vm.user.id})">{{vm.user.first_name}} {{vm.user.last_name}}</a></p>
+	</div>
+</div>
+
+<div class="row">
+	<div class="col-md-12">
+		<student-wish-list user-id="vm.user.id" wish-lists="vm.user.student_wishlist" temp-type="full"></student-wish-list>
+	</div>
+</div>

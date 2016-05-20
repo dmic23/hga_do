@@ -1,0 +1,26 @@
+
+<div class="modal-header">
+	<h3 class="modal-title">{{vm.modalTitle}}</h3>
+</div>
+<div class="modal-body row">
+
+	<form name="newMaterialForm" ng-submit="vm.submitMaterial(vm.newMaterial)" novalidate>
+		<div class="form-group col-md-6">
+			<label class="" for="material_name">Material Name</label>
+			<input type="text" name="material_name" class="form-control border-input" placeholder="Material Name" ng-model="vm.newMaterial.material_name"/>
+		</div>
+		<div class="form-group col-md-6">
+			<label class="" for="material">File</label>
+			<div class="button form-control border-input" ngf-select ng-model="vm.newMaterial.file" name="file" ngf-pattern="'image/*,.pdf,.doc,.docx,.xls,.xlsx'" ngf-accept="'image/*,audio/*,video/*,application/pdf'" ngf-max-size="20MB" ngf-min-height="100" ngf-resize="{width: 300, height: 300}"><i class="ti-file"/> Select</div>
+		</div>
+		<div class="form-group col-md-12">
+			<label for="material_notes">Material Notes</label>
+			<textarea class="form-control border-input" rows="2" placeholder="Material Notes" name="material_notes" ng-model="vm.newMaterial.material_notes"></textarea>
+		</div>
+		<div class="col-md-6">
+			<button class="btn btn-danger margin-10" type="button" ng-click="vm.closeModal()">Cancel</button>
+			<button class="btn btn-primary margin-10" type="submit">Submit</button>		
+		</div>
+	</form>
+
+</div>

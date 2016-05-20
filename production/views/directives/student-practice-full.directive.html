@@ -1,0 +1,69 @@
+
+<div class="card">
+
+    <div class="header row">
+        <h4 class="title col-md-6">Student Practice Log</h4>
+        <button class="btn btn-sm btn-info pull-right col-md-3 margin-10" ng-click="open({})"><i class="ti-plus"/> Add Practice</button>
+        <p class="category col-md-7">Here is a subtitle for practice log</p>
+        <div class="col-md-7 padding-top-20">
+        	<p class="center-block">Top Speed : <span class="text-success" ng-cloak>{{maxSpeed}}</span><small> npm</small></p>
+        	<p class="center-block">Avg Speed : <span class="text-warning" ng-cloak>{{sumSpeeds/practiceLogs.length | number:0}}</span><small> npm</small></p>
+        	<p class="center-block">Avg Time : <span class="text-primary" ng-cloak>{{sumTimes/practiceLogs.length | number:0}}</span><small> mins</small></p>
+        </div>
+		<form class="col-md-5">
+			<div class="form-group padding-10">
+				<div class="input-group">
+					<div class="input-group-addon border"><i class="fa fa-search"></i></div>
+					<input type="text" class="form-control border-input" placeholder="Search" ng-model="searchItem">
+				</div>      
+			</div>
+		</form>
+    </div>
+
+    <div class="content table-responsive table-full-width">
+
+        <table class="table table-hover">
+
+            <thead>
+                <th>
+                	<a href="javascript:void(0)" ng-click="sortType = 'practice_item_created'; sortReverse = !sortReverse">Date <span ng-show="sortType == 'practice_item_created' && !sortReverse" class="fa fa-caret-down"></span><span ng-show="sortType == 'practice_item_created' && sortReverse" class="fa fa-caret-up"></span></a>
+         
+          		</th>
+                <th>
+                	<a href="javascript:void(0)" ng-click="sortType = 'practice_category_display'; sortReverse = !sortReverse">Practice Category <span ng-show="sortType == 'practice_category_display' && !sortReverse" class="fa fa-caret-down"></span><span ng-show="sortType == 'practice_category_display' && sortReverse" class="fa fa-caret-up"></span></a>
+          		</th>
+                <th>
+                	<a href="javascript:void(0)" ng-click="sortType = 'practice_item'; sortReverse = !sortReverse">Practiced <span ng-show="sortType == 'practice_item' && !sortReverse" class="fa fa-caret-down"></span><span ng-show="sortType == 'practice_item' && sortReverse" class="fa fa-caret-up"></span></a>
+          		</th>
+                <th>
+                	<a href="javascript:void(0)" ng-click="sortType = 'practice_time'; sortReverse = !sortReverse">Practice Time <span ng-show="sortType == 'practice_time' && !sortReverse" class="fa fa-caret-down"></span><span ng-show="sortType == 'practice_time' && sortReverse" class="fa fa-caret-up"></span></a>
+          		</th>
+                <th>
+                	<a href="javascript:void(0)" ng-click="sortType = 'practice_speed'; sortReverse = !sortReverse">Practice Speed <span ng-show="sortType == 'practice_speed' && !sortReverse" class="fa fa-caret-down"></span><span ng-show="sortType == 'practice_speed' && sortReverse" class="fa fa-caret-up"></span></a>
+          		</th>
+          		<th class=""><a href="javascript:void(0)">Practice Notes</a></th>
+            </thead>
+
+            <tbody>
+				<tr ng-repeat="log in practiceLogs | orderBy: sortType:sortReverse | filter:searchItem" name="studentPracticeForm" ng-form novalidate>
+					<td class="width-10"><small>{{log.practice_date | date:'MMM d, y'}}</small></td>
+					<td class="width-15">{{log.practice_category_display}}</td>
+					<td class="width-15">{{log.practice_item | limitTo: 35}}<span ng-if="log.practice_item.length > 35">...</span></td>
+					<td class="width-15">{{log.practice_time}} <span> mins</span></td>
+					<td class="width-15">{{log.practice_speed}} <span> npm</span></td>
+					<td class="width-20">{{log.practice_notes | limitTo: 75}}<span ng-if="log.practice_notes.length > 75">...</span></td>
+					<td class="width-10">
+						<button type="button" class="btn btn-warning btn-link" ng-click="open(log)"><i class="ti-pencil"/></button>
+						<button type="button" class="btn btn-danger btn-link" ng-click="deletePracticeLog(log);"><i class="ti-trash"/></button>
+					</td>
+				</tr>
+				<tr ng-if="practiceLogs.length < 1">
+					<td class="text-warning">No Practice. Add one!</td>
+				</tr>
+            </tbody>
+
+        </table>
+		
+    </div>
+
+</div>
