@@ -130,7 +130,6 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
     queryset = StudentMaterial.objects.all()
     serializer_class = StudentMaterialSerializer
     permission_classes = (IsAuthenticated,)
-    # parser_classes = (MultiPartParser, FormParser,)
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -162,7 +161,7 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
 
 
 class LoginView(views.APIView):
-    # authentication_classes = (JSONWebTokenAuthentication, )
+    
     def post(self, request, format=None):
         username = request.data['username']
         password = request.data['password']

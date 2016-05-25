@@ -46,7 +46,7 @@ class User(AbstractBaseUser):
         ('BLACK', 'Black'),
     )
     username = models.CharField(max_length=50, unique=True, null=True, blank=True)
-    email = models.EmailField(unique=True, default='blah@blah.com')
+    email = models.EmailField(unique=True)
     first_name = models.CharField(max_length=50, null=True, blank=True)
     last_name = models.CharField(max_length=50, null=True, blank=True)
     is_admin = models.BooleanField(default=False)
