@@ -33,7 +33,6 @@ class TopicViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if serializer.is_valid():
-            print 'SRD --- %s' %self.request.data
             user = self.request.user
             cat_id = self.request.data.pop('category_id')
             cat = Category.objects.get(id=cat_id)

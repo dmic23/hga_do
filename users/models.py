@@ -36,14 +36,14 @@ class UserManager(BaseUserManager):
 
 class User(AbstractBaseUser):
     USER_RANK = ( 
-        ('WHITE', 'White'),
-        ('RED', 'Red'),
-        ('YELLOW', 'Yellow'),
-        ('GREEN', 'Green'),
-        ('BLUE', 'Blue'),
-        ('PURPLE', 'Purple'),
-        ('BROWN', 'Brown'),
-        ('BLACK', 'Black'),
+        ('1', 'White'),
+        ('2', 'Red'),
+        ('3', 'Yellow'),
+        ('4', 'Green'),
+        ('5', 'Blue'),
+        ('6', 'Purple'),
+        ('7', 'Brown'),
+        ('8', 'Black'),
     )
     username = models.CharField(max_length=50, unique=True, null=True, blank=True)
     email = models.EmailField(unique=True)
@@ -51,7 +51,7 @@ class User(AbstractBaseUser):
     last_name = models.CharField(max_length=50, null=True, blank=True)
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
     user_pic = models.FileField(upload_to=get_upload_file_name, null=True, blank=True, default='blank_user.png')
     user_created = models.DateTimeField(auto_now_add=True)
     user_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='created_user', null=True, blank=True, unique=False)

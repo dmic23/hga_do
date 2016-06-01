@@ -3,6 +3,7 @@ import json
 from django.contrib.auth import authenticate, login, logout
 # from django.contrib.auth.forms import PasswordResetForm
 from django.core.exceptions import ValidationError
+from django.core.mail import EmailMultiAlternatives
 from django.http import HttpResponse
 from django.utils import timezone
 from io import BytesIO
@@ -18,6 +19,13 @@ from users.serializers import UserSerializer, StudentGoalSerializer, StudentPrac
 # from authentication.permissions import IsAccountOwner
 # from eventlog.models import log
 
+def send_update_email(user):
+    subject, from_email, to, bcc = 'Updates from Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
+    text_content = 'Hi %s!  You have new updates at Hirsch Guitar Academy. Login here: hirschguitaracademy.com Thank you, Hirsch Guitar Academy' %user.first_name
+    html_content = '<p>Hi %s!</hp><br/><p>You have new updates at Hirsch Guitar Academy! Login here to see them: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %user.first_name
+    msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
+    msg.attach_alternative(html_content, "text/html")
+    msg.send()
 
 class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
@@ -36,7 +44,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if serializer.is_valid():
-            serializer.save(**self.request.data)
+            serializer.save(user=self.request.user, **self.request.data)
         else:
             return Response({
                 'status': 'Bad request',
@@ -54,7 +62,7 @@ class UserViewSet(viewsets.ModelViewSet):
             for f in temp_file:
                 file_dict['user_pic'] = f
 
-            serializer.save(user_updated_by=self.request.user, **file_dict)
+            serializer.save(user=self.request.user, **file_dict)
 
 class StudentGoalsViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
@@ -99,12 +107,14 @@ class StudentObjectiveViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if serializer.is_valid():
+            send_update_email(self.request.user);
             studentId = self.request.data.pop('student')
             student = User.objects.get(id=studentId)
             serializer.save(student=student, objective_created_by=self.request.user, **self.request.data)
 
     def perform_update(self, serializer):
         if serializer.is_valid():
+            send_update_email(self.request.user);
             serializer.save(objective_updated_by=self.request.user, **self.request.data)
 
 
@@ -145,6 +155,7 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
                 file_dict['file'] = f
             studentId = file_dict.pop('student')
             student = User.objects.get(id=studentId)
+            send_update_email(self.request.user);
             serializer.save(student=student, material_added_by=self.request.user, **file_dict)
 
     def perform_update(self, serializer):
@@ -157,6 +168,7 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
                 file_dict[i] = item
             for f in temp_file:
                 file_dict['file'] = f
+            send_update_email(self.request.user);
             serializer.save(**file_dict)
 
 

@@ -27,11 +27,9 @@ class TopicSerializer(serializers.ModelSerializer):
         fields = ('id', 'topic_category', 'topic', 'topic_created_by', 'topic_created', 'topic_message',)
 
     def create(self, validated_data):
-        print "VAL DATA === %s" %validated_data.get('topic_created_by')
         user = validated_data.get('topic_created_by')
         if 'message' in validated_data:
             msg = validated_data.pop('message')
-            print "MSG == %s" %msg
         else:
             msg = None
 
@@ -39,10 +37,8 @@ class TopicSerializer(serializers.ModelSerializer):
         topic.save()
 
         if msg:
-            print "VAL DATA 2 === %s" %validated_data
             new_msg = Message.objects.create(message_topic=topic, message_user=user, message=msg)
             new_msg.save()
-            print "New MSG == %s" %new_msg
         return topic
 
 
