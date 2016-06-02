@@ -2,6 +2,7 @@ from django.conf.urls import include, patterns, url
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
+from django.contrib.auth import views
 from rest_framework import routers
 from student_portal.views import IndexView
 from forum.views import CategoryViewSet, TopicViewSet, MessageViewSet
@@ -28,11 +29,11 @@ urlpatterns = [
     url(r'^api/v1/auth/login/$', LoginView.as_view(), name='login'),
     url(r'^api/v1/auth/logout/$', LogoutView.as_view(), name='logout'),
 
-    # url(r'^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
-    #     'django.contrib.auth.views.password_reset_confirm', name='password_reset_confirm'),
-    # url(r'^reset/done/$', 'django.contrib.auth.views.password_reset_complete', name='password_reset_complete'),
-    # url(r'^reset_password/$', 'django.contrib.auth.views.password_reset', name='password_reset'),
-    # url(r'^reset_password_done/$', 'django.contrib.auth.views.password_reset_done', name='password_reset_done'),  
+    url(r'^password_reset/$', views.password_reset, name='password_reset'),
+    url(r'^password_reset/done/$', views.password_reset_done, name='password_reset_done'),
+    url(r'^reset/(?P<uidb64>[0-9A-Za-z_\-]+)/(?P<token>[0-9A-Za-z]{1,13}-[0-9A-Za-z]{1,20})/$',
+        views.password_reset_confirm, name='password_reset_confirm'),
+    url(r'^reset/done/$', views.password_reset_complete, name='password_reset_complete'),
 ]
 
 # if settings.DEBUG:

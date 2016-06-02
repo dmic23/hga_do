@@ -30,6 +30,8 @@ class UserManager(BaseUserManager):
         user = self.create_user(username=username, password=password)
         user.username = username
         user.is_admin = True
+        user.is_staff = True
+        user.is_active = True
         user.save()
 
         return user
@@ -58,7 +60,7 @@ class User(AbstractBaseUser):
     user_updated = models.DateTimeField(auto_now=True)
     user_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='updated_user', null=True, blank=True, unique=False)
     location = models.CharField(max_length=50, null=True, blank=True, default='Ruston')
-    play_level = models.CharField(max_length=20, choices=USER_RANK, null=True, blank=True, default='WHITE')
+    play_level = models.CharField(max_length=20, choices=USER_RANK, null=True, blank=True, default='1')
 
     objects = UserManager()
 

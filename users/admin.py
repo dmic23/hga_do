@@ -1,17 +1,82 @@
+from django import forms
 from django.contrib import admin
+from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.forms import ReadOnlyPasswordHashField
 from users.models import User, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
 
-class UserAdmin(admin.ModelAdmin):
+class UserCreationForm(forms.ModelForm):
+
+    password1 = forms.CharField(label='New Password', widget=forms.PasswordInput)
+    password2 = forms.CharField(label='Password confirmation', widget=forms.PasswordInput)
+
+    class Meta:
+        model = User
+        fields = ('email', 'username')
+
+    def clean_password2(self):
+        password1 = self.cleaned_data.get("password1")
+        password2 = self.cleaned_data.get("password2")
+        if password1 and password2 and password1 != password2:
+            raise forms.ValidationError("Passwords don't match")
+        return password2
+
+    def save(self, commit=True):
+        user = super(UserCreationForm, self).save(commit=False)
+        user.set_password(self.cleaned_data["password1"])
+        if commit:
+            user.save()
+        return user
+
+
+class UserChangeForm(forms.ModelForm):
+
+    password = ReadOnlyPasswordHashField(label= ("New Password"),
+        help_text= ("Raw passwords are not stored, so there is no way to see "
+                    "this user's password, but you can change the password "
+                    "using <a href=\"/password_reset/\"> ---> CLICK HERE <-- </a>"))
+
+    class Meta:
+        model = User
+        fields = ('email', 'password', 'username', 'is_admin')
+
+    def clean_password(self):
+
+        return self.initial["password"]
+
+
+class UserAdmin(UserAdmin):
+    form = UserCreationForm
+    add_form = UserCreationForm
 
     class Meta:
         model = User
 
     list_display = ('username', 'first_name', 'last_name', 'is_active', 'user_created', 'location', 'play_level',)
     list_filter = ('is_active', 'username', 'first_name', 'last_name', 'user_created', 'location', 'play_level', 'is_admin',)
+    readonly_fields = ('user_created', 'user_updated', 'is_staff',)
+
+    fieldsets = (
+        ('Authorization and Login info', {'fields': ('username', 'password1', 'password2',)}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'location', 'play_level', 'user_pic',)}),
+        (None, {'fields': ('user_created_by', 'user_created', 'user_updated_by', 'user_updated',)}),
+        ('Permissions', {'fields': ('is_admin', 'is_active', 'is_staff',)}),
+    )
+
+    add_fieldsets = (
+        ('Authorization and Login info', {'fields': ('username', 'password1', 'password2')}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'location', 'play_level', 'user_pic',)}),
+        (None, {'fields': ('user_created_by', 'user_created', 'user_updated_by', 'user_updated',)}),
+        ('Permissions', {'fields': ('is_admin', 'is_active', 'is_staff',)}),
+    )
+
     ordering = ('-user_created',)
     filter_horizontal = ()
 
 admin.site.register(User, UserAdmin)
+
+admin.site.unregister(Group)
 
 class StudentGoalAdmin(admin.ModelAdmin):
 

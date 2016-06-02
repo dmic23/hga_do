@@ -114,7 +114,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = ('id', 'user_created', 'user_updated', 'is_active', 'is_admin', 'is_staff', 'username', 'first_name', 'last_name', 'user_pic',
                 'location', 'play_level', 'play_level_display', 'email', 'student_goal', 'student_log', 'student_objective', 'student_wishlist', 'student_material',)
-        read_only_fields = ('id', 'user_created', 'is_admin', 'is_staff',)
+        read_only_fields = ('id', 'user_created', 'is_admin',)
 
     def create(self, validated_data):
         cur_user = validated_data.pop('user')    
