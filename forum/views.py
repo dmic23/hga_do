@@ -14,17 +14,7 @@ class CategoryViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
-    # permission_classes = (IsAuthenticated,)
 
-    # def perform_create(self, serializer):
-    #     if serializer.is_valid():
-    #         studentId = self.request.data.pop('student')
-    #         student = User.objects.get(id=studentId)
-    #         serializer.save(student=student, goal_created_by=self.request.user, **self.request.data)
-
-    # def perform_update(self, serializer):
-    #     if serializer.is_valid():
-    #         serializer.save(goal_updated_by=self.request.user, **self.request.data)
 
 class TopicViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
@@ -47,6 +37,23 @@ class MessageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         if serializer.is_valid():
             user = self.request.user
-            topic_id = self.request.data.pop('topic_id')
+            file_dict = {}
+            files = []
+
+            for i in self.request.data:
+                item = self.request.data[i]
+                file_dict[i] = item
+
+            for k,v in file_dict.iteritems():
+                if 'message_file' in k:
+                    files.append(v)
+                if k == 'topic_id':
+                    topic_id = v
+                if k == 'message':
+                    message = v
+
             topic = Topic.objects.get(id=topic_id)
-            serializer.save(message_user=user, message_topic=topic, **self.request.data)
+            serializer.save(message_user=user, message_topic=topic, message=message, files=files)
+
+
+

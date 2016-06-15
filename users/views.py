@@ -16,16 +16,17 @@ from rest_framework.response import Response
 # from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from users.models import User, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
 from users.serializers import UserSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer
+from users.tasks import send_update_email
 # from authentication.permissions import IsAccountOwner
 # from eventlog.models import log
 
-def send_update_email(user):
-    subject, from_email, to, bcc = 'Updates from Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
-    text_content = 'Hi %s!  You have new updates at Hirsch Guitar Academy. Login here: hirschguitaracademy.com Thank you, Hirsch Guitar Academy' %user.first_name
-    html_content = '<p>Hi %s!</hp><br/><p>You have new updates at Hirsch Guitar Academy! Login here to see them: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %user.first_name
-    msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
-    msg.attach_alternative(html_content, "text/html")
-    msg.send()
+# def send_update_email(user):
+#     subject, from_email, to, bcc = 'Updates from Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
+#     text_content = 'Hi %s!  You have new updates at Hirsch Guitar Academy. Login here: hirschguitaracademy.com Thank you, Hirsch Guitar Academy' %user.first_name
+#     html_content = '<p>Hi %s!</hp><br/><p>You have new updates at Hirsch Guitar Academy! Login here to see them: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %user.first_name
+#     msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
+#     msg.attach_alternative(html_content, "text/html")
+#     msg.send()
 
 class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
@@ -107,14 +108,15 @@ class StudentObjectiveViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if serializer.is_valid():
-            send_update_email(self.request.user);
             studentId = self.request.data.pop('student')
             student = User.objects.get(id=studentId)
+            send_update_email.delay(student);
             serializer.save(student=student, objective_created_by=self.request.user, **self.request.data)
 
     def perform_update(self, serializer):
         if serializer.is_valid():
-            send_update_email(self.request.user);
+            objective = StudentObjective.objects.get(id=self.request.data['id'])
+            send_update_email.delay(objective.student);
             serializer.save(objective_updated_by=self.request.user, **self.request.data)
 
 
@@ -155,11 +157,12 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
                 file_dict['file'] = f
             studentId = file_dict.pop('student')
             student = User.objects.get(id=studentId)
-            send_update_email(self.request.user);
+            send_update_email.delay(student);
             serializer.save(student=student, material_added_by=self.request.user, **file_dict)
 
     def perform_update(self, serializer):
         if serializer.is_valid():
+            print "SRD === %s" %self.request.data
             if 'file' in self.request.data:
                 temp_file = self.request.data.pop('file')
             file_dict = {}
@@ -168,7 +171,9 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
                 file_dict[i] = item
             for f in temp_file:
                 file_dict['file'] = f
-            send_update_email(self.request.user);
+            student_id = file_dict['id']
+            material = StudentMaterial.objects.get(id=student_id)
+            send_update_email.delay(material.student);
             serializer.save(**file_dict)
 
 

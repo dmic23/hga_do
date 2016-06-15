@@ -8,23 +8,24 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
 from users.models import User, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
+from users.tasks import send_create_email, send_active_email
 
 
-def send_create_email(user):
-    subject, from_email, to, bcc = 'Welcome to Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
-    text_content = 'Hi %s! Welcome to Hirsch Guitar Academy  You\'re account must be activated by Hirsch Guitar Academy' %user.first_name
-    html_content = '<p>Hi %s!</hp><br/><p> Welcome to Hirsch Guitar Academy!</p><br/><p>You\'re account will be activated shortly on approval from Hirsch Guitar Acacdemy. You will receive a confirmation email once complete.</p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %user.first_name
-    msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
-    msg.attach_alternative(html_content, "text/html")
-    msg.send()
+# def send_create_email(user):
+#     subject, from_email, to, bcc = 'Welcome to Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
+#     text_content = 'Hi %s! Welcome to Hirsch Guitar Academy  You\'re account must be activated by Hirsch Guitar Academy' %user.first_name
+#     html_content = '<p>Hi %s!</hp><br/><p> Welcome to Hirsch Guitar Academy!</p><br/><p>You\'re account will be activated shortly on approval from Hirsch Guitar Acacdemy. You will receive a confirmation email once complete.</p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %user.first_name
+#     msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
+#     msg.attach_alternative(html_content, "text/html")
+#     msg.send()
 
-def send_active_email(user):
-    subject, from_email, to, bcc = 'Welcome to Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
-    text_content = 'Hi %s! Welcome to Hirsch Guitar Academy  Login here: www.hirschguitaracademy.com' %user.first_name
-    html_content = '<p>Hi %s!</hp><br/><p> Welcome to Hirsch Guitar Academy!</p><br/><p>You\'re account has been activated. Login here: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %user.first_name
-    msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
-    msg.attach_alternative(html_content, "text/html")
-    msg.send()
+# def send_active_email(user):
+#     subject, from_email, to, bcc = 'Welcome to Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
+#     text_content = 'Hi %s! Welcome to Hirsch Guitar Academy  Login here: www.hirschguitaracademy.com' %user.first_name
+#     html_content = '<p>Hi %s!</hp><br/><p> Welcome to Hirsch Guitar Academy!</p><br/><p>You\'re account has been activated. Login here: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %user.first_name
+#     msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
+#     msg.attach_alternative(html_content, "text/html")
+#     msg.send()
 
 
 class StudentGoalSerializer(serializers.ModelSerializer):
@@ -125,7 +126,7 @@ class UserSerializer(serializers.ModelSerializer):
         else:
             user.user_created_by = user
         user.save()
-        send_create_email(user)
+        send_create_email.delay(user)
         return user
 
     def update(self, instance, validated_data):
@@ -139,7 +140,8 @@ class UserSerializer(serializers.ModelSerializer):
         instance.user_updated_by = validated_data.pop('user')
         if validated_data.get('is_active') == 'true':
             if instance.is_active == False:
-                send_active_email(instance)
+                print "NOT ACT TO ACT"
+                send_active_email.delay(instance)
             instance.is_active = True
         else:
             instance.is_active = False

@@ -35,19 +35,19 @@ class UserChangeForm(forms.ModelForm):
     password = ReadOnlyPasswordHashField(label= ("New Password"),
         help_text= ("Raw passwords are not stored, so there is no way to see "
                     "this user's password, but you can change the password "
-                    "using <a href=\"/password_reset/\"> ---> CLICK HERE <-- </a>"))
+                    "here: <a href=\"/password_reset/\"> ---> CLICK HERE <-- </a>"))
 
     class Meta:
         model = User
-        fields = ('email', 'password', 'username', 'is_admin')
+        fields = ('email', 'password', 'username')
 
     def clean_password(self):
 
         return self.initial["password"]
 
 
-class UserAdmin(UserAdmin):
-    form = UserCreationForm
+class UserAdmin(admin.ModelAdmin):
+    form = UserChangeForm
     add_form = UserCreationForm
 
     class Meta:
@@ -55,20 +55,20 @@ class UserAdmin(UserAdmin):
 
     list_display = ('username', 'first_name', 'last_name', 'is_active', 'user_created', 'location', 'play_level',)
     list_filter = ('is_active', 'username', 'first_name', 'last_name', 'user_created', 'location', 'play_level', 'is_admin',)
-    readonly_fields = ('user_created', 'user_updated', 'is_staff',)
+    readonly_fields = ('user_created', 'user_updated', 'last_login',)
 
     fieldsets = (
-        ('Authorization and Login info', {'fields': ('username', 'password1', 'password2',)}),
+        ('Authorization and Login info', {'fields': ('username', 'password',)}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'location', 'play_level', 'user_pic',)}),
-        (None, {'fields': ('user_created_by', 'user_created', 'user_updated_by', 'user_updated',)}),
-        ('Permissions', {'fields': ('is_admin', 'is_active', 'is_staff',)}),
+        (None, {'fields': ('last_login', 'user_created_by', 'user_created', 'user_updated_by', 'user_updated',)}),
+        ('Permissions', {'fields': ('is_admin', 'is_active',)}),
     )
 
     add_fieldsets = (
         ('Authorization and Login info', {'fields': ('username', 'password1', 'password2')}),
         ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'location', 'play_level', 'user_pic',)}),
         (None, {'fields': ('user_created_by', 'user_created', 'user_updated_by', 'user_updated',)}),
-        ('Permissions', {'fields': ('is_admin', 'is_active', 'is_staff',)}),
+        ('Permissions', {'fields': ('is_admin', 'is_active',)}),
     )
 
     ordering = ('-user_created',)

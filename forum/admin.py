@@ -1,5 +1,5 @@
 from django.contrib import admin
-from forum.models import Category, Topic, Message
+from forum.models import Category, Topic, Message, MessageFile
 
 class CategoryAdmin(admin.ModelAdmin):
 
@@ -19,9 +19,14 @@ class TopicAdmin(admin.ModelAdmin):
 
 admin.site.register(Topic, TopicAdmin)
 
+class MessageFileInLine(admin.StackedInline):
+	model = MessageFile
+	extra = 0
+
 class MessageAdmin(admin.ModelAdmin):
 
-    class Meta:
-        model = Message
+	inlines = [
+		MessageFileInLine,
+	]
 
 admin.site.register(Message, MessageAdmin)

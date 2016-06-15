@@ -4,18 +4,35 @@ from datetime import date
 from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
-from forum.models import Category, Topic, Message
+from forum.models import Category, Topic, Message, MessageFile
 from users.serializers import SimpleUserSerializer
 
+class MessageFileSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MessageFile
+        fields = ('id', 'message', 'message_file', 'message_file_created', 'message_file_created_by',)
 
 class MessageSerializer(serializers.ModelSerializer):
     message_user = SimpleUserSerializer(required=False)
     message_topic = serializers.CharField(required=False)
+    file_message = MessageFileSerializer(many=True)
 
     class Meta:
         model = Message
-        fields = ('id', 'message_topic', 'message_user', 'message', 'message_created', 'message_visible',)
+        fields = ('id', 'message_topic', 'message_user', 'message', 'message_created', 'message_visible', 'file_message',)
 
+    def create(self, validated_data):
+        msg_files = validated_data.pop('files')
+        file_msg = validated_data.pop('file_message')
+        message = Message.objects.create(**validated_data)
+        message.save()
+        user = validated_data.pop('message_user')
+        for file in msg_files:
+            print "file === %s" %file
+            msg_file = MessageFile.objects.create(message=message, message_file=file, message_file_created_by=user)
+            msg_file.save()
+        return message
 
 class TopicSerializer(serializers.ModelSerializer):
     topic_message = MessageSerializer(many=True, required=False)
