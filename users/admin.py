@@ -53,13 +53,13 @@ class UserAdmin(admin.ModelAdmin):
     class Meta:
         model = User
 
-    list_display = ('username', 'first_name', 'last_name', 'is_active', 'user_created', 'location', 'play_level',)
+    list_display = ('username', 'first_name', 'last_name', 'email', 'is_active', 'user_created', 'location', 'play_level',)
     list_filter = ('is_active', 'username', 'first_name', 'last_name', 'user_created', 'location', 'play_level', 'is_admin',)
     readonly_fields = ('user_created', 'user_updated', 'last_login',)
 
     fieldsets = (
         ('Authorization and Login info', {'fields': ('username', 'password',)}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'location', 'play_level', 'user_pic',)}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_of_birth', 'location', 'play_level', 'user_pic', 'user_credit',)}),
         (None, {'fields': ('last_login', 'user_created_by', 'user_created', 'user_updated_by', 'user_updated',)}),
         ('Permissions', {'fields': ('is_admin', 'is_active',)}),
     )

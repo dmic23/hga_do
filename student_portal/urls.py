@@ -6,6 +6,7 @@ from django.contrib.auth import views
 from rest_framework import routers
 from student_portal.views import IndexView
 from forum.views import CategoryViewSet, TopicViewSet, MessageViewSet
+from schedule.views import CourseViewSet, CourseScheduleViewSet, RemoveCourseScheduleViewSet
 from users.views import LoginView, LogoutView, UserViewSet, StudentGoalsViewSet, StudentPracticeLogViewSet, StudentObjectiveViewSet, StudentWishListViewSet, StudentMaterialsViewSet
 
 router = routers.SimpleRouter()
@@ -18,13 +19,15 @@ router.register(r'student-materials', StudentMaterialsViewSet)
 router.register(r'forum-category', CategoryViewSet)
 router.register(r'forum-topics', TopicViewSet)
 router.register(r'forum-message', MessageViewSet)
+router.register(r'courses', CourseViewSet)
+router.register(r'course-schedule', CourseScheduleViewSet)
+router.register(r'course-schedule-remove', RemoveCourseScheduleViewSet)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/v1/', include(router.urls)),
 
-    url(r'^$',  IndexView.as_view(), name='index'),    
-    # url(r'^/$',  IndexView.as_view(), name='index'),
+    url(r'^$',  IndexView.as_view(), name='index'),
 
     url(r'^api/v1/auth/login/$', LoginView.as_view(), name='login'),
     url(r'^api/v1/auth/logout/$', LogoutView.as_view(), name='logout'),

@@ -1,32 +1,15 @@
 # -*- coding: utf-8 -*-
+import datetime
 from datetime import date
 from django.contrib.auth import update_session_auth_hash
-from django.core.mail import EmailMultiAlternatives
 from django.utils import timezone
 from rest_framework import serializers, status
-# from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
+from schedule.models import CourseSchedule
+# from schedule.serializers import CourseScheduleSerializer
 from users.models import User, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
 from users.tasks import send_create_email, send_active_email
-
-
-# def send_create_email(user):
-#     subject, from_email, to, bcc = 'Welcome to Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
-#     text_content = 'Hi %s! Welcome to Hirsch Guitar Academy  You\'re account must be activated by Hirsch Guitar Academy' %user.first_name
-#     html_content = '<p>Hi %s!</hp><br/><p> Welcome to Hirsch Guitar Academy!</p><br/><p>You\'re account will be activated shortly on approval from Hirsch Guitar Acacdemy. You will receive a confirmation email once complete.</p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %user.first_name
-#     msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
-#     msg.attach_alternative(html_content, "text/html")
-#     msg.send()
-
-# def send_active_email(user):
-#     subject, from_email, to, bcc = 'Welcome to Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
-#     text_content = 'Hi %s! Welcome to Hirsch Guitar Academy  Login here: www.hirschguitaracademy.com' %user.first_name
-#     html_content = '<p>Hi %s!</hp><br/><p> Welcome to Hirsch Guitar Academy!</p><br/><p>You\'re account has been activated. Login here: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %user.first_name
-#     msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
-#     msg.attach_alternative(html_content, "text/html")
-#     msg.send()
-
 
 class StudentGoalSerializer(serializers.ModelSerializer):
     goal = serializers.CharField(required=False)
@@ -110,10 +93,11 @@ class UserSerializer(serializers.ModelSerializer):
     student_objective = StudentObjectiveSerializer(many=True, required=False)
     student_wishlist = StudentWishListSerializer(many=True, required=False)
     student_material = StudentMaterialSerializer(many=True, required=False)
+    next_course = serializers.SerializerMethodField(required=False)
     
     class Meta:
         model = User
-        fields = ('id', 'user_created', 'user_updated', 'is_active', 'is_admin', 'is_staff', 'username', 'first_name', 'last_name', 'user_pic',
+        fields = ('id', 'user_created', 'user_updated', 'is_active', 'is_admin', 'is_staff', 'username', 'first_name', 'last_name', 'user_pic', 'date_of_birth', 'user_credit', 'next_course',
                 'location', 'play_level', 'play_level_display', 'email', 'student_goal', 'student_log', 'student_objective', 'student_wishlist', 'student_material',)
         read_only_fields = ('id', 'user_created', 'is_admin',)
 
@@ -126,7 +110,7 @@ class UserSerializer(serializers.ModelSerializer):
         else:
             user.user_created_by = user
         user.save()
-        send_create_email.delay(user)
+        send_create_email.delay(user.id)
         return user
 
     def update(self, instance, validated_data):
@@ -140,8 +124,7 @@ class UserSerializer(serializers.ModelSerializer):
         instance.user_updated_by = validated_data.pop('user')
         if validated_data.get('is_active') == 'true':
             if instance.is_active == False:
-                print "NOT ACT TO ACT"
-                send_active_email.delay(instance)
+                send_active_email.delay(instance.id)
             instance.is_active = True
         else:
             instance.is_active = False
@@ -156,6 +139,16 @@ class UserSerializer(serializers.ModelSerializer):
             update_session_auth_hash(self.context.get('request'), instance)
 
         return instance
+
+    def get_next_course(self,obj):
+        try:
+            course = CourseSchedule.objects.filter(student=obj).earliest('schedule_date')
+            return {'course_date': datetime.datetime.combine(course.schedule_date, course.schedule_start_time), 'course_name':course.course.course_title}
+        except CourseSchedule.DoesNotExist:
+            comment = None
+            return {'course_date': '', 'course_name': ''}
+
+
 
 
 

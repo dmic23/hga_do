@@ -64,6 +64,8 @@ class User(AbstractBaseUser):
     user_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='updated_user', null=True, blank=True, unique=False)
     location = models.CharField(max_length=50, null=True, blank=True, default='Ruston')
     play_level = models.CharField(max_length=20, choices=USER_RANK, null=True, blank=True, default='1')
+    date_of_birth = models.DateField(max_length=50, null=True, blank=True)
+    user_credit = models.CharField(max_length=4, null=True, blank=True)
 
     objects = UserManager()
 
