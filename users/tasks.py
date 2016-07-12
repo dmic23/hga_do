@@ -1,13 +1,8 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
 from django.conf import settings
-# from django.contrib.auth.forms import PasswordResetForm
-# from django.core.files.base import ContentFile
 from django.core.mail import EmailMultiAlternatives
 from django.http import HttpResponse
-# from django.template.loader import render_to_string
-# from django.utils.html import strip_tags
-# from io import BytesIO
 from celery import shared_task
 from celery.task.schedules import crontab
 from celery.decorators import periodic_task
@@ -70,20 +65,19 @@ def send_schedule_course_confim(course_id, user_id):
     user = User.objects.get(id=user_id)
 
     subject, from_email, to, bcc = 'Class Scheduled with Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
-    text_content = 'Hi %s!  A class has been scheduled with Hirsch Guitar Academy. Scheduled class: %s on %s at %s. Login to view your class schedule. Login here: hirschguitaracademy.com Thank you, Hirsch Guitar Academy' %(user.first_name, sched_course.course.course_title, sched_course.schedule_date, sched_course.schedule_start_time,)
-    html_content = '<p>Hi %s!</p><br/><p>A class has been scheduled with Hirsch Guitar Academy. Scheduled class: %s on %s at %s. Login to view your class schedule. Login here: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %(user.first_name, sched_course.course.course_title, sched_course.schedule_date, sched_course.schedule_start_time,)
+    text_content = 'Hi %s!  A class has been scheduled with Hirsch Guitar Academy. Scheduled class: %s on %s at %s. Login to view your class schedule. Login here: hirschguitaracademy.com Thank you, Hirsch Guitar Academy' %(user.first_name, sched_course.course.course_title, sched_course.schedule_date, sched_course.schedule_start_time.strftime("%I:%M %p"),)
+    html_content = '<p>Hi %s!</p><br/><p>A class has been scheduled with Hirsch Guitar Academy. Scheduled class: %s on %s at %s. Login to view your class schedule. Login here: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %(user.first_name, sched_course.course.course_title, sched_course.schedule_date, sched_course.schedule_start_time.strftime("%I:%M %p"),)
     msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
     msg.attach_alternative(html_content, "text/html")
     msg.send()
 
 @shared_task
-def send_schedule_course_cancel(course_id, user_id):
-    sched_course = CourseSchedule.objects.get(id=course_id)
+def send_schedule_course_cancel(user_id, title, date, time):
     user = User.objects.get(id=user_id)
 
     subject, from_email, to, bcc = 'Class Cancelled with Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
-    text_content = 'Hi %s!  A class has been cancelled with Hirsch Guitar Academy. Cancelled class: %s on %s at %s. Login to view your class schedule. Login here: hirschguitaracademy.com Thank you, Hirsch Guitar Academy' %(user.first_name, sched_course.course.course_title, sched_course.schedule_date, sched_course.schedule_start_time,)
-    html_content = '<p>Hi %s!</p><br/><p>A class has been cancelled with Hirsch Guitar Academy. Cancelled class: %s on %s at %s. Login to view your class schedule. Login here: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %(user.first_name, sched_course.course.course_title, sched_course.schedule_date, sched_course.schedule_start_time,)
+    text_content = 'Hi %s!  A class has been cancelled with Hirsch Guitar Academy. Cancelled class: %s on %s at %s. Login to view your class schedule. Login here: hirschguitaracademy.com Thank you, Hirsch Guitar Academy' %(user.first_name, title, date, time,)
+    html_content = '<p>Hi %s!</p><br/><p>A class has been cancelled with Hirsch Guitar Academy. Cancelled class: %s on %s at %s. Login to view your class schedule. Login here: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %(user.first_name, title, date, time,)
     msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
     msg.attach_alternative(html_content, "text/html")
     msg.send()
@@ -96,8 +90,15 @@ def send_schedule_course_reminder():
     for course in sched_courses: 
         for user in course.student.all():
             subject, from_email, to, bcc = 'Upcoming Class with Hirsch Guitar Academy', 'hgatestacct@gmail.com', user.email, 'hgatestacct@gmail.com'
-            text_content = 'Hi %s!  You have an upcoming Class scheduled with Hirsch Guitar Academy. Scheduled class: %s on %s at %s. Login to view your class schedule. Login here: hirschguitaracademy.com Thank you, Hirsch Guitar Academy' %(user.first_name, course.course.course_title, course.schedule_date, course.schedule_start_time,)
-            html_content = '<p>Hi %s!</p><br/><p>You have an upcoming Class scheduled with Hirsch Guitar Academy. Scheduled class: %s on %s at %s. Login to view your class schedule. Login here: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %(user.first_name, course.course.course_title, course.schedule_date, course.schedule_start_time,)
+            text_content = 'Hi %s!  You have an upcoming Class scheduled with Hirsch Guitar Academy. Scheduled class: %s on %s at %s. Login to view your class schedule. Login here: hirschguitaracademy.com Thank you, Hirsch Guitar Academy' %(user.first_name, course.course.course_title, course.schedule_date, course.schedule_start_time.strftime("%I:%M %p"),)
+            html_content = '<p>Hi %s!</p><br/><p>You have an upcoming Class scheduled with Hirsch Guitar Academy. Scheduled class: %s on %s at %s. Login to view your class schedule. Login here: <a href="hirschguitaracademy.com">hirschguitaracademy.com</a></p><br/><p>Thank you,</p><br/><p>Hirsch Guitar Academy</p>' %(user.first_name, course.course.course_title, course.schedule_date, course.schedule_start_time.strftime("%I:%M %p"),)
             msg = EmailMultiAlternatives(subject, text_content, from_email, [to], [bcc])
             msg.attach_alternative(html_content, "text/html")
             msg.send()
+
+@shared_task
+def update_recurring_credits():
+    students = User.objects.filter(is_active=True)
+    for student in students:
+        student.user_credit = int(student.recurring_credit) + int(student.user_credit)
+        student.save()

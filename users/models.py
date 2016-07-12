@@ -23,7 +23,7 @@ class UserManager(BaseUserManager):
         user = self.model(
             username=username,
             first_name=kwargs.get('first_name'), last_name=kwargs.get('last_name'),
-            email=kwargs.get('email'))
+            email=kwargs.get('email'), date_of_birth=kwargs.get('date_of_birth'))
         user.set_password(password)
         user.save()
 
@@ -65,7 +65,8 @@ class User(AbstractBaseUser):
     location = models.CharField(max_length=50, null=True, blank=True, default='Ruston')
     play_level = models.CharField(max_length=20, choices=USER_RANK, null=True, blank=True, default='1')
     date_of_birth = models.DateField(max_length=50, null=True, blank=True)
-    user_credit = models.CharField(max_length=4, null=True, blank=True)
+    user_credit = models.CharField(max_length=4, null=True, blank=True, default=0)
+    recurring_credit = models.CharField(max_length=2, null=True, blank=True, default=0)
 
     objects = UserManager()
 

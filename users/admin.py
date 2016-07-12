@@ -59,7 +59,7 @@ class UserAdmin(admin.ModelAdmin):
 
     fieldsets = (
         ('Authorization and Login info', {'fields': ('username', 'password',)}),
-        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_of_birth', 'location', 'play_level', 'user_pic', 'user_credit',)}),
+        ('Personal info', {'fields': ('first_name', 'last_name', 'email', 'date_of_birth', 'location', 'play_level', 'user_pic', 'recurring_credit', 'user_credit',)}),
         (None, {'fields': ('last_login', 'user_created_by', 'user_created', 'user_updated_by', 'user_updated',)}),
         ('Permissions', {'fields': ('is_admin', 'is_active',)}),
     )

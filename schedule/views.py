@@ -20,7 +20,6 @@ class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
 
     def list(self, request, id=None):
-        print 'USER +++ %s' %self.request.user
         if self.request.user.is_admin:
             queryset = self.queryset.filter(course_active=True)
         else:
@@ -48,9 +47,6 @@ class CourseScheduleViewSet(viewsets.ModelViewSet):
             course = Course.objects.get(id=course_id)
             user_id = self.request.data.pop('student_id')
             student = User.objects.get(id=user_id)
-            credit = int(student.user_credit) - int(course.course_credit)
-            student.user_credit = credit
-            student.save()
             serializer.save(course=course, student=student, user=self.request.user, **self.request.data)
 
 
@@ -67,8 +63,11 @@ class RemoveCourseScheduleViewSet(viewsets.ModelViewSet):
             student = User.objects.get(id=user_id)
             instance = serializer.save()
             if student in instance.student.all():
+                title = str(instance.course.course_title)
+                date = str(instance.schedule_date)
+                time = instance.schedule_start_time.strftime("%I:%M %p") 
+                send_schedule_course_cancel.apply_async((student.id, title, date, time))
                 instance.student.remove(student)
-                send_schedule_course_cancel.apply_async((instance.id, student.id))
                 start_date = datetime.datetime.combine(instance.schedule_date, instance.schedule_start_time)
                 if start_date > datetime.datetime.now() + datetime.timedelta(hours=24):
                     student.user_credit = int(student.user_credit) + int(instance.course.course_credit)

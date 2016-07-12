@@ -121,6 +121,8 @@ class UserSerializer(serializers.ModelSerializer):
         instance.location = validated_data.get('location', instance.location)
         instance.play_level = validated_data.get('play_level', instance.play_level)
         instance.user_pic = validated_data.get('user_pic', instance.user_pic)
+        instance.user_credit = validated_data.get('user_credit', instance.user_credit)
+        instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)        
         instance.user_updated_by = validated_data.pop('user')
         if validated_data.get('is_active') == 'true':
             if instance.is_active == False:
@@ -142,7 +144,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_next_course(self,obj):
         try:
-            course = CourseSchedule.objects.filter(student=obj).earliest('schedule_date')
+            course = CourseSchedule.objects.filter(student=obj).exclude(schedule_date__lt=timezone.now()).earliest('schedule_date')
             return {'course_date': datetime.datetime.combine(course.schedule_date, course.schedule_start_time), 'course_name':course.course.course_title}
         except CourseSchedule.DoesNotExist:
             comment = None
