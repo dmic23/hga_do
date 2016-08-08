@@ -8,6 +8,7 @@ from django.utils import timezone
 from rest_framework import permissions, status, views, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from schedule.models import Course, CourseSchedule
 from schedule.serializers import CourseSerializer, CourseScheduleSerializer
 from users.models import User, StudentPracticeLog
@@ -18,12 +19,14 @@ class CourseViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     queryset = Course.objects.all()
     serializer_class = CourseSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def list(self, request, id=None):
         if self.request.user.is_admin:
-            queryset = self.queryset.filter(course_active=True)
+            queryset = Course.objects.filter(course_active=True)
         else:
-            queryset = self.queryset.filter(course_active=True).exclude(Q(course_private=True) & ~Q(course_private_student=self.request.user))
+            queryset = Course.objects.filter(course_active=True).exclude(Q(course_private=True) & ~Q(course_private_student=self.request.user))
         serializer = CourseSerializer(queryset, many=True)
         return Response(serializer.data)        
     
@@ -32,12 +35,14 @@ class CourseScheduleViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     queryset = CourseSchedule.objects.all()
     serializer_class = CourseScheduleSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def list(self, request, id=None):
-        if self.request.user.is_admin:
-            queryset = self.queryset
+        if not self.request.user.is_admin:
+            queryset = CourseSchedule.objects.filter(student=self.request.user).exclude(schedule_date__lt=timezone.now())   
         else:
-            queryset = self.queryset.filter(student=self.request.user).exclude(schedule_date__lt=timezone.now())
+            queryset = CourseSchedule.objects.all()
         serializer = CourseScheduleSerializer(queryset, many=True)
         return Response(serializer.data)
 
@@ -54,6 +59,8 @@ class RemoveCourseScheduleViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     queryset = CourseSchedule.objects.all()
     serializer_class = CourseScheduleSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def perform_update(self, serializer):
         if serializer.is_valid():

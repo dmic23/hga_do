@@ -4,6 +4,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.auth import views
 from rest_framework import routers
+from rest_framework_jwt.views import obtain_jwt_token,refresh_jwt_token, verify_jwt_token
 from student_portal.views import IndexView
 from forum.views import CategoryViewSet, TopicViewSet, MessageViewSet
 from schedule.views import CourseViewSet, CourseScheduleViewSet, RemoveCourseScheduleViewSet
@@ -31,6 +32,10 @@ urlpatterns = [
 
     url(r'^api/v1/auth/login/$', LoginView.as_view(), name='login'),
     url(r'^api/v1/auth/logout/$', LogoutView.as_view(), name='logout'),
+
+    url(r'^api/v1/auth/token/', obtain_jwt_token),
+    url(r'^api/v1/auth/refresh/', refresh_jwt_token),
+    url(r'^api/v1/auth/verify/', verify_jwt_token),
 
     url(r'^password_reset/$', views.password_reset, name='password_reset'),
     url(r'^password_reset/done/$', views.password_reset_done, name='password_reset_done'),

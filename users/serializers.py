@@ -144,10 +144,13 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_next_course(self,obj):
         try:
-            course = CourseSchedule.objects.filter(student=obj).exclude(schedule_date__lt=timezone.now()).earliest('schedule_date')
+            if obj.is_admin:
+                course = CourseSchedule.objects.all().exclude(schedule_date__lt=timezone.now()).earliest('schedule_date')
+            else:
+                course = CourseSchedule.objects.filter(student=obj).exclude(schedule_date__lt=timezone.now()).earliest('schedule_date')
             return {'course_date': datetime.datetime.combine(course.schedule_date, course.schedule_start_time), 'course_name':course.course.course_title}
         except CourseSchedule.DoesNotExist:
-            comment = None
+            course = None
             return {'course_date': '', 'course_name': ''}
 
 

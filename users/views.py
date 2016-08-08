@@ -13,7 +13,8 @@ from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser, FileUploadParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-# from rest_framework_jwt.authentication import JSONWebTokenAuthentication
+from rest_framework_jwt.authentication import JSONWebTokenAuthentication
+from rest_framework_jwt.settings import api_settings
 from users.models import User, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
 from users.serializers import UserSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer
 from users.tasks import send_update_email
@@ -24,16 +25,16 @@ class UserViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    # permission_classes = (IsAuthenticated,)
-    # authentication_classes = (JSONWebTokenAuthentication, )
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
-    # def get_permissions(self):
-    #     if self.request.method in permissions.SAFE_METHODS:
-    #         return (permissions.AllowAny(),)
+    def get_permissions(self):
+        if self.request.method in permissions.SAFE_METHODS:
+            return (permissions.AllowAny(),)
 
-    #     if self.request.method == 'POST':
-    #         return (permissions.AllowAny(),)
-    #     return (permissions.IsAuthenticated(),)
+        if self.request.method == 'POST':
+            return (permissions.AllowAny(),)
+        return (permissions.IsAuthenticated(),)
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -62,6 +63,7 @@ class StudentGoalsViewSet(viewsets.ModelViewSet):
     queryset = StudentGoal.objects.all()
     serializer_class = StudentGoalSerializer
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -79,6 +81,7 @@ class StudentPracticeLogViewSet(viewsets.ModelViewSet):
     queryset = StudentPracticeLog.objects.all()
     serializer_class = StudentPracticeLogSerializer
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication, )
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -97,6 +100,7 @@ class StudentObjectiveViewSet(viewsets.ModelViewSet):
     queryset = StudentObjective.objects.all()
     serializer_class = StudentObjectiveSerializer
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -117,6 +121,7 @@ class StudentWishListViewSet(viewsets.ModelViewSet):
     queryset = StudentWishList.objects.all()
     serializer_class = StudentWishListSerializer
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication, )
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -134,6 +139,7 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
     queryset = StudentMaterial.objects.all()
     serializer_class = StudentMaterialSerializer
     permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication, )
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -179,7 +185,13 @@ class LoginView(views.APIView):
             if user.is_active:
                 login(request, user)
                 serialized = UserSerializer(user)
-                user = self.request.user
+                # jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+                # jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+                # print "SER DATA === %s" %serialized.data
+                # payload = jwt_payload_handler(user)
+                # print "PAYLOAD == %s" %payload
+                # token = jwt_encode_handler(payload)
+                # print "TOKEN === %s" %token
                 # ip = get_ip(request)
                 # log(
                 #     user=user,

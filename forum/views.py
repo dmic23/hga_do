@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import permissions, status, views, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from forum.models import Category, Topic, Message
 from forum.serializers import CategorySerializer, TopicSerializer, MessageSerializer
 from users.models import User
@@ -14,12 +15,16 @@ class CategoryViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
 
 class TopicViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     queryset = Topic.objects.all()
     serializer_class = TopicSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -33,6 +38,8 @@ class MessageViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
     queryset = Message.objects.all()
     serializer_class = MessageSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def perform_create(self, serializer):
         if serializer.is_valid():
