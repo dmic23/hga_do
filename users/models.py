@@ -11,6 +11,33 @@ def get_upload_file_name(instance, filename):
 
     return settings.UPLOAD_FILE_PATTERN % (str(time()).replace('.','_'), filename)
 
+class Location(models.Model):
+    name = models.CharField(max_length=50, null=True, blank=True)
+    addr1 = models.CharField(max_length=50, null=True, blank=True)
+    addr2 = models.CharField(max_length=50, null=True, blank=True)
+    city = models.CharField(max_length=50, null=True, blank=True)
+    state = models.CharField(max_length=50, null=True, blank=True)
+    zip_code = models.CharField(max_length=20, null=True, blank=True)
+    phone_main = models.CharField(max_length=20, null=True, blank=True)
+    phone_other = models.CharField(max_length=20, null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+    location_created = models.DateTimeField(auto_now_add=True)
+    location_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='location_created_user')
+
+    def __unicode__(self):
+        return smart_unicode(self.name)
+
+class StudentNote(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='student_note')
+    note = models.TextField()
+    note_created = models.DateTimeField(auto_now_add=True)
+    note_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='note_created_user')
+    note_updated = models.DateTimeField(auto_now=True)
+    note_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='note_updated_user', null=True, blank=True)
+
+    def __unicode__(self):
+        return smart_unicode(self.id)
+
 class UserManager(BaseUserManager):
 
     def create_user(self, username, password=None, **kwargs):
@@ -62,7 +89,7 @@ class User(AbstractBaseUser):
     user_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='created_user', null=True, blank=True, unique=False)
     user_updated = models.DateTimeField(auto_now=True)
     user_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='updated_user', null=True, blank=True, unique=False)
-    location = models.CharField(max_length=50, null=True, blank=True, default='Ruston')
+    location = models.ForeignKey(Location, related_name='user_location', null=True, blank=True)
     play_level = models.CharField(max_length=20, choices=USER_RANK, null=True, blank=True, default='1')
     date_of_birth = models.DateField(max_length=50, null=True, blank=True)
     user_credit = models.CharField(max_length=4, null=True, blank=True, default=0)

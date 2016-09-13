@@ -4,16 +4,17 @@ from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from schedule.models import Course, CourseSchedule
-from users.serializers import UserSerializer
+from users.serializers import UserSerializer, LocationSerializer
 from users.tasks import send_schedule_course_confim
 
 class CourseSerializer(serializers.ModelSerializer):
+    course_location = LocationSerializer(required=False)
 
     class Meta:
         model = Course
         fields = ('id', 'course_title', 'course_subtitle', 'course_length',  'course_start_time', 'course_end_time','course_created', 'course_created_by', 'course_age_min', 'course_age_max',
             'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'practice_min', 'course_credit', 'max_student', 'course_private', 'course_private_student',
-            'white', 'red', 'yellow', 'green', 'blue', 'purple', 'brown', 'black',)
+            'white', 'red', 'yellow', 'green', 'blue', 'purple', 'brown', 'black', 'course_location',)
 
 
 class CourseScheduleSerializer(serializers.ModelSerializer):

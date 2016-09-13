@@ -13,8 +13,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from rest_framework_jwt.settings import api_settings
-from users.models import User,StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
-from users.serializers import UserSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
+from users.serializers import UserSerializer, LocationSerializer, StudentNoteSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer
 from users.tasks import send_update_email
 
 
@@ -54,6 +54,31 @@ class UserViewSet(viewsets.ModelViewSet):
                 file_dict['user_pic'] = f
 
             serializer.save(user=self.request.user, **file_dict)
+
+class LocationViewSet(viewsets.ModelViewSet):
+    lookup_field = 'id'
+    queryset = Location.objects.all()
+    serializer_class = LocationSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)  
+
+
+class StudentNoteViewSet(viewsets.ModelViewSet):
+    lookup_field = 'id'
+    queryset = StudentNote.objects.all()
+    serializer_class = StudentNoteSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
+
+    def perform_create(self, serializer):
+        if serializer.is_valid():
+            student_id = self.request.data.pop('student')
+            student = User.objects.get(id=student_id)
+            serializer.save(student=student, note_created_by=self.request.user, **self.request.data)
+    
+    def perform_update(self, serializer):
+        if serializer.is_valid():
+            serializer.save(note_updated_by=self.request.user, **self.request.data)
     
 
 class StudentGoalsViewSet(viewsets.ModelViewSet):

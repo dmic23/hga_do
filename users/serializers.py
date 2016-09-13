@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
 from schedule.models import CourseSchedule
 # from schedule.serializers import CourseScheduleSerializer
-from users.models import User, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
 from users.tasks import send_create_email, send_active_email
 
 class StudentGoalSerializer(serializers.ModelSerializer):
@@ -80,6 +80,25 @@ class SimpleUserSerializer(serializers.ModelSerializer):
         return {'goal':goal, 'goal_target_date':goal_date}
 
 
+class LocationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Location
+        fields = ('id', 'name', 'addr1', 'addr2', 'city', 'state', 'zip_code', 'phone_main', 'phone_other', 'notes',)
+
+
+class StudentNoteSerializer(serializers.ModelSerializer):
+    student = serializers.CharField(required=False)
+    note = serializers.CharField(required=False)
+    note_created_by = serializers.CharField(required=False)
+
+    class Meta:
+        model = StudentNote
+        fields = ('id', 'student', 'note', 'note_created', 'note_created_by', 'note_updated',)
+
+    # def update(self, instance, validated_data):
+
+
 class UserSerializer(serializers.ModelSerializer):
     play_level_display = serializers.CharField(source='get_play_level_display', required=False)
     email = serializers.CharField(required=False, allow_blank=True)
@@ -91,11 +110,13 @@ class UserSerializer(serializers.ModelSerializer):
     student_wishlist = StudentWishListSerializer(many=True, required=False)
     student_material = StudentMaterialSerializer(many=True, required=False)
     next_course = serializers.SerializerMethodField(required=False)
+    location = LocationSerializer(required=False)
+    student_note = StudentNoteSerializer(many=True, required=False)
     
     class Meta:
         model = User
         fields = ('id', 'user_created', 'user_updated', 'is_active', 'is_admin', 'is_staff', 'username', 'first_name', 'last_name', 'user_pic', 'date_of_birth', 'user_credit', 'next_course',
-                'play_level', 'play_level_display', 'email', 'student_goal', 'student_log', 'student_objective', 'student_wishlist', 'student_material',)
+                'location', 'play_level', 'play_level_display', 'email', 'student_goal', 'student_log', 'student_objective', 'student_wishlist', 'student_material', 'student_note',)
         read_only_fields = ('id', 'user_created', 'is_admin',)
 
     def create(self, validated_data):

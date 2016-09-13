@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.db import models
 from django.utils.encoding import smart_unicode
+from users.models import Location
 
 class Course(models.Model):
 
@@ -38,6 +39,7 @@ class Course(models.Model):
     practice_min = models.CharField(max_length=4, null=True, blank=True, default=0)
     course_credit = models.CharField(max_length=3, null=True, blank=True, default=0)
     max_student = models.CharField(max_length=2, null=True, blank=True)
+    course_location = models.ForeignKey(Location, related_name='location_course', blank=True, null=True)
     course_private = models.BooleanField(default=False)
     course_private_student = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
 
