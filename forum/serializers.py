@@ -29,7 +29,6 @@ class MessageSerializer(serializers.ModelSerializer):
         message.save()
         user = validated_data.pop('message_user')
         for file in msg_files:
-            print "file === %s" %file
             msg_file = MessageFile.objects.create(message=message, message_file=file, message_file_created_by=user)
             msg_file.save()
         return message

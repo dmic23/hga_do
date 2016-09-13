@@ -23,10 +23,11 @@ class CourseViewSet(viewsets.ModelViewSet):
     authentication_classes = (JSONWebTokenAuthentication,)
 
     def list(self, request, id=None):
+        courses = []
         if self.request.user.is_admin:
-            queryset = Course.objects.filter(course_active=True)
+            queryset = Course.objects.filter(course_active=True).exclude(course_recurring_end_date__lt=timezone.now())
         else:
-            queryset = Course.objects.filter(course_active=True).exclude(Q(course_private=True) & ~Q(course_private_student=self.request.user))
+            queryset = Course.objects.filter(course_active=True).exclude(Q(course_private=True) & ~Q(course_private_student=self.request.user)).exclude(course_recurring_end_date__lt=timezone.now())
         serializer = CourseSerializer(queryset, many=True)
         return Response(serializer.data)        
     
@@ -52,7 +53,8 @@ class CourseScheduleViewSet(viewsets.ModelViewSet):
             course = Course.objects.get(id=course_id)
             user_id = self.request.data.pop('student_id')
             student = User.objects.get(id=user_id)
-            serializer.save(course=course, student=student, user=self.request.user, **self.request.data)
+            recurring = self.request.data.pop('recurring')
+            serializer.save(course=course, student=student, user=self.request.user, recurring=recurring, schedule_created_by=self.request.user, **self.request.data)
 
 
 class RemoveCourseScheduleViewSet(viewsets.ModelViewSet):
@@ -68,6 +70,7 @@ class RemoveCourseScheduleViewSet(viewsets.ModelViewSet):
             sched_id = self.request.data.pop('schedule')
             user_id = self.request.data.pop('student_id')
             student = User.objects.get(id=user_id)
+            recurring = self.request.data.pop('recurring')
             instance = serializer.save()
             if student in instance.student.all():
                 title = str(instance.course.course_title)
@@ -79,6 +82,15 @@ class RemoveCourseScheduleViewSet(viewsets.ModelViewSet):
                 if start_date > datetime.datetime.now() + datetime.timedelta(hours=24):
                     student.user_credit = int(student.user_credit) + int(instance.course.course_credit)
                     student.save()
+                if not recurring:
+                    instance.schedule_recurring_user.remove(student)
+                else:
+                    today = datetime.date.today()
+                    next_scheduled_date = today + datetime.timedelta(days=7)
+                    recurring_course, created = CourseSchedule.objects.get_or_create(course=instance.course, schedule_date=next_scheduled_date, schedule_start_time=instance.schedule_start_time, schedule_end_time=instance.schedule_end_time, schedule_created_by=self.request.user)
+                    recurring_course.student.add(student)
+                    recurring_course.schedule_recurring_user.add(student)
+                    recurring_course.save()
             if instance.student.count() == 0:
                 course_schedule = CourseSchedule.objects.get(id=instance.id)
                 course_schedule.delete()

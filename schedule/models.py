@@ -6,6 +6,7 @@ from django.contrib.auth.models import User
 from django.core.files.storage import default_storage
 from django.db import models
 from django.utils.encoding import smart_unicode
+from users.models import Location
 
 class Course(models.Model):
 
@@ -22,8 +23,7 @@ class Course(models.Model):
     sunday = models.BooleanField(default=True)
     course_start_time = models.TimeField(max_length=6, null=True, blank=True)
     course_end_time = models.TimeField(max_length=6, null=True, blank=True)
-    # course_recurring = models.BooleanField(default=False)
-    # course_notes = models.TextField(null=True, blank=True)
+    course_recurring_end_date = models.DateTimeField(max_length=50, null=True, blank=True)
     course_created = models.DateTimeField(auto_now_add=True)
     course_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='course_created')
     course_age_min = models.CharField(max_length=2, null=True, blank=True, default=0)
@@ -39,6 +39,7 @@ class Course(models.Model):
     practice_min = models.CharField(max_length=4, null=True, blank=True, default=0)
     course_credit = models.CharField(max_length=3, null=True, blank=True, default=0)
     max_student = models.CharField(max_length=2, null=True, blank=True)
+    course_location = models.ForeignKey(Location, related_name='location_course', blank=True, null=True)
     course_private = models.BooleanField(default=False)
     course_private_student = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True)
 
@@ -52,7 +53,7 @@ class CourseSchedule(models.Model):
     schedule_date = models.DateField(max_length=50, null=True, blank=True)
     schedule_start_time = models.TimeField(max_length=6, null=True, blank=True)
     schedule_end_time = models.TimeField(max_length=6, null=True, blank=True)
-    # schedule_notes = models.TextField(null=True, blank=True)
+    schedule_recurring_user = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='user_recurring', blank=True)
     schedule_created = models.DateTimeField(auto_now_add=True)
     schedule_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='schedule_created', null=True, blank=True)
     schedule_updated = models.DateTimeField(auto_now_add=True)
@@ -61,4 +62,5 @@ class CourseSchedule(models.Model):
 
     def __unicode__(self):
         return smart_unicode(self.course, self.schedule_date)
+
 

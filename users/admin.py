@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from users.models import User, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
 
 class UserCreationForm(forms.ModelForm):
 
@@ -45,6 +45,27 @@ class UserChangeForm(forms.ModelForm):
 
         return self.initial["password"]
 
+class LocationAdmin(admin.ModelAdmin):
+
+    class Meta:
+        model = Location
+
+    list_display = ('name', 'addr1', 'city',)
+    list_filter = ('name', 'addr1', 'city',)
+    ordering = ('city',)
+
+admin.site.register(Location, LocationAdmin)
+
+class StudentNoteAdmin(admin.ModelAdmin):
+
+    class Meta:
+        model = StudentNote
+
+    list_display = ('student', 'note', 'note_created',)
+    list_filter = ('student', 'note', 'note_created',)
+    ordering = ('-note_created',)
+
+admin.site.register(StudentNote, StudentNoteAdmin)
 
 class UserAdmin(admin.ModelAdmin):
     form = UserChangeForm
@@ -53,8 +74,8 @@ class UserAdmin(admin.ModelAdmin):
     class Meta:
         model = User
 
-    list_display = ('username', 'first_name', 'last_name', 'email', 'is_active', 'user_created', 'location', 'play_level',)
-    list_filter = ('is_active', 'username', 'first_name', 'last_name', 'user_created', 'location', 'play_level', 'is_admin',)
+    list_display = ('username', 'first_name', 'last_name', 'email', 'is_active', 'user_created', 'play_level',)
+    list_filter = ('is_active', 'username', 'first_name', 'last_name', 'user_created', 'play_level', 'is_admin',)
     readonly_fields = ('user_created', 'user_updated', 'last_login',)
 
     fieldsets = (

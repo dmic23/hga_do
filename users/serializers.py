@@ -8,7 +8,7 @@ from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
 from schedule.models import CourseSchedule
 # from schedule.serializers import CourseScheduleSerializer
-from users.models import User, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
 from users.tasks import send_create_email, send_active_email
 
 class StudentGoalSerializer(serializers.ModelSerializer):
@@ -20,7 +20,6 @@ class StudentGoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentGoal
         fields = ('id', 'student', 'goal', 'goal_target_date', 'goal_complete', 'goal_complete_date', 'goal_notes', 'goal_created',)
-
 
 class StudentPracticeLogSerializer(serializers.ModelSerializer):
     practice_category_display = serializers.SerializerMethodField(source='practice_category', required=False)
@@ -39,11 +38,9 @@ class StudentObjectiveSerializer(serializers.ModelSerializer):
     student = serializers.CharField(required=False)
     objective_complete_date = serializers.DateTimeField(format=None, input_formats=None, required=False)
 
-
     class Meta:
         model = StudentObjective
-        fields = ('id', 'student', 'objective', 'objective_complete', 'objective_complete_date', 'objective_notes', 'objective_created',)
-
+        fields = ('id', 'student', 'objective', 'objective_complete', 'objective_complete_date', 'objective_notes', 'objective_visible', 'objective_priority', 'objective_created',)
 
 class StudentWishListSerializer(serializers.ModelSerializer):
     wish_item = serializers.CharField(required=False)
@@ -83,6 +80,25 @@ class SimpleUserSerializer(serializers.ModelSerializer):
         return {'goal':goal, 'goal_target_date':goal_date}
 
 
+class LocationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Location
+        fields = ('id', 'name', 'addr1', 'addr2', 'city', 'state', 'zip_code', 'phone_main', 'phone_other', 'notes',)
+
+
+class StudentNoteSerializer(serializers.ModelSerializer):
+    student = serializers.CharField(required=False)
+    note = serializers.CharField(required=False)
+    note_created_by = serializers.CharField(required=False)
+
+    class Meta:
+        model = StudentNote
+        fields = ('id', 'student', 'note', 'note_created', 'note_created_by', 'note_updated',)
+
+    # def update(self, instance, validated_data):
+
+
 class UserSerializer(serializers.ModelSerializer):
     play_level_display = serializers.CharField(source='get_play_level_display', required=False)
     email = serializers.CharField(required=False, allow_blank=True)
@@ -94,11 +110,13 @@ class UserSerializer(serializers.ModelSerializer):
     student_wishlist = StudentWishListSerializer(many=True, required=False)
     student_material = StudentMaterialSerializer(many=True, required=False)
     next_course = serializers.SerializerMethodField(required=False)
+    location = LocationSerializer(required=False)
+    student_note = StudentNoteSerializer(many=True, required=False)
     
     class Meta:
         model = User
         fields = ('id', 'user_created', 'user_updated', 'is_active', 'is_admin', 'is_staff', 'username', 'first_name', 'last_name', 'user_pic', 'date_of_birth', 'user_credit', 'next_course',
-                'location', 'play_level', 'play_level_display', 'email', 'student_goal', 'student_log', 'student_objective', 'student_wishlist', 'student_material',)
+                'location', 'play_level', 'play_level_display', 'email', 'student_goal', 'student_log', 'student_objective', 'student_wishlist', 'student_material', 'student_note',)
         read_only_fields = ('id', 'user_created', 'is_admin',)
 
     def create(self, validated_data):
@@ -118,7 +136,6 @@ class UserSerializer(serializers.ModelSerializer):
         instance.last_name = validated_data.get('last_name', instance.last_name)
         instance.username = validated_data.get('username', instance.username)
         instance.email = validated_data.get('email', instance.email)
-        instance.location = validated_data.get('location', instance.location)
         instance.play_level = validated_data.get('play_level', instance.play_level)
         instance.user_pic = validated_data.get('user_pic', instance.user_pic)
         instance.user_credit = validated_data.get('user_credit', instance.user_credit)
@@ -130,6 +147,12 @@ class UserSerializer(serializers.ModelSerializer):
             instance.is_active = True
         else:
             instance.is_active = False
+        if instance.location.id == validated_data.get('location[id]'):
+            instance.location = validated_data.get('location', instance.location)
+        else:
+            location_id = validated_data.get('location[id]')
+            location = Location.objects.get(id=location_id)
+            instance.location = location
         instance.save()
         password = validated_data.get('password', None)
         confirm_password = validated_data.get('confirm_password', None)
