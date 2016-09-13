@@ -4,7 +4,7 @@ from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from schedule.models import Course, CourseSchedule
-from users.serializers import UserSerializer, LocationSerializer
+from users.serializers import UserSerializer
 from users.tasks import send_schedule_course_confim
 
 class CourseSerializer(serializers.ModelSerializer):
