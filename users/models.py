@@ -94,6 +94,10 @@ class User(AbstractBaseUser):
     date_of_birth = models.DateField(max_length=50, null=True, blank=True)
     user_credit = models.CharField(max_length=4, null=True, blank=True, default=0)
     recurring_credit = models.CharField(max_length=2, null=True, blank=True, default=0)
+    course_reminder = models.BooleanField(default=True)
+    practice_reminder = models.BooleanField(default=True)
+    user_update = models.BooleanField(default=True)
+
 
     objects = UserManager()
 
@@ -197,10 +201,31 @@ class StudentWishList(models.Model):
 
 class StudentMaterial(models.Model):
 
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='student_material')
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='student_material', null=True, blank=True)
+    student_group = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='group_student', blank=True)
     file = models.FileField(upload_to=get_upload_file_name, null=True, blank=True)
     material_name = models.CharField(max_length=50, null=True, blank=True)
     material_notes = models.TextField(null=True, blank=True)
     material_added = models.DateTimeField(auto_now_add=True)
-    material_added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='material_added_user')
+    material_added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='material_added_user', null=True, blank=True)
+    material_updated = models.DateTimeField(auto_now=True)
+    material_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='material_updated_user', null=True, blank=True)
 
+class StudentEmail(models.Model):
+    MAIL_TYPE = ( 
+        ('CRE', 'User Created'),
+        ('ACT', 'User Active'),
+        ('UPD', 'Account Updated'),
+        ('PRACT', 'User Practice Reminder'),
+        ('SCHED', 'Course Scheduled'),
+        ('CNCL', 'Course Cancelled'),
+        ('REMD', 'Course Scheduled Reminder')
+    )
+    mail_type = models.CharField(max_length=8, choices=MAIL_TYPE, null=True, blank=True)
+    from_email = models.EmailField(null=True, blank=True)
+    cc = models.EmailField(null=True, blank=True)
+    bcc = models.EmailField(null=True, blank=True)
+    subject = models.CharField(max_length=250, null=True, blank=True)
+    title = models.CharField(max_length=250, null=True, blank=True)
+    body = models.TextField(null=True, blank=True)
+    footer = models.TextField(null=True, blank=True)

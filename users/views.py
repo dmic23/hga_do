@@ -15,7 +15,7 @@ from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from rest_framework_jwt.settings import api_settings
 from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
 from users.serializers import UserSerializer, LocationSerializer, StudentNoteSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer
-from users.tasks import send_update_email
+from users.tasks import send_basic_email
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -75,11 +75,11 @@ class StudentNoteViewSet(viewsets.ModelViewSet):
             student_id = self.request.data.pop('student')
             student = User.objects.get(id=student_id)
             serializer.save(student=student, note_created_by=self.request.user, **self.request.data)
-    
+  
     def perform_update(self, serializer):
         if serializer.is_valid():
             serializer.save(note_updated_by=self.request.user, **self.request.data)
-    
+
 
 class StudentGoalsViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
@@ -114,7 +114,7 @@ class StudentPracticeLogViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         if serializer.is_valid():
-            studentId = self.request.data.pop('student')
+            # studentId = self.request.data.pop('student')
             serializer.save(practice_item_updated_by=self.request.user, **self.request.data)
 
 
@@ -130,13 +130,13 @@ class StudentObjectiveViewSet(viewsets.ModelViewSet):
             studentId = self.request.data.pop('student')
             student = User.objects.get(id=studentId)
             # check_priority(self.request.data.get('objective_priority'))
-            send_update_email.delay(student.id);
+            send_basic_email.delay(student.id, 'UPD')
             serializer.save(student=student, objective_created_by=self.request.user, **self.request.data)
 
     def perform_update(self, serializer):
         if serializer.is_valid():
             objective = StudentObjective.objects.get(id=self.request.data['id'])
-            send_update_email.delay(objective.student.id);
+            send_basic_email.delay(objective.student.id, 'UPD')
             serializer.save(objective_updated_by=self.request.user, **self.request.data)
 
     # def update_priority(student, priority):
@@ -173,7 +173,7 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
     queryset = StudentMaterial.objects.all()
     serializer_class = StudentMaterialSerializer
     permission_classes = (IsAuthenticated,)
-    authentication_classes = (JSONWebTokenAuthentication, )
+    authentication_classes = (JSONWebTokenAuthentication,)
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -181,36 +181,55 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
                 temp_file = self.request.data.pop('file')
 
             file_dict = {}
-            for i in self.request.data:
-                if i != 'file': 
-                    item = self.request.data[i]
-                    file_dict[i] = item
+            group = []
+            for k, v in self.request.data.iteritems():
+                if 'group_student' in k:
+                    group.append(v)
+
+                if k != 'file' and 'group_student' not in k:
+                    item = self.request.data.get(k)
+                    file_dict[k] = item
+
+            file_dict['material_added_by'] = self.request.user
+
             for f in temp_file:
                 file_dict['file'] = f
-            studentId = file_dict.pop('student')
-            student = User.objects.get(id=studentId)
-            send_update_email.delay(student.id);
-            serializer.save(student=student, material_added_by=self.request.user, **file_dict)
+
+            # if group:
+            #     serializer.save(group=group, **file_dict)
+            # else:
+            student_id = file_dict.pop('student')
+            student = User.objects.get(id=student_id)
+            serializer.save(student=student, group=group, **file_dict)
 
     def perform_update(self, serializer):
         if serializer.is_valid():
+            file_dict = {}
+            group = []
             if 'file' in self.request.data:
                 temp_file = self.request.data.pop('file')
+                for f in temp_file:
+                    file_dict['file'] = f
 
-            file_dict = {}
-            for i in self.request.data:
-                item = self.request.data[i]
-                file_dict[i] = item
-            for f in temp_file:
-                file_dict['file'] = f
-            student_id = file_dict['id']
-            material = StudentMaterial.objects.get(id=student_id)
-            send_update_email.delay(material.student.id);
-            serializer.save(**file_dict)
+            for k, v in self.request.data.iteritems():
+                if 'group_student' in k:
+                    group.append(v)
+
+                if k != 'file' and 'group_student' not in k: 
+                    item = self.request.data.get(k)
+                    file_dict[k] = item
+
+            file_dict['material_updated_by'] = self.request.user
+
+            # if group:
+            #     serializer.save(group=group, **file_dict)
+            # else:
+            #     serializer.save(**file_dict)
+            serializer.save(group=group, **file_dict)
 
 
 class LoginView(views.APIView):
-    
+
     def post(self, request, format=None):
         username = request.data['username']
         password = request.data['password']
@@ -254,9 +273,8 @@ class LoginView(views.APIView):
 
 class LogoutView(views.APIView):
     # permission_classes = (permissions.IsAuthenticated,)
-
     def post(self, request, format=None):
-        user = self.request.user
+        # user = self.request.user
         # ip = get_ip(request)
         # log(
         #     user=user,

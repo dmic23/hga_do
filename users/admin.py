@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentEmail
 
 class UserCreationForm(forms.ModelForm):
 
@@ -66,6 +66,15 @@ class StudentNoteAdmin(admin.ModelAdmin):
     ordering = ('-note_created',)
 
 admin.site.register(StudentNote, StudentNoteAdmin)
+
+class StudentEmailAdmin(admin.ModelAdmin):
+
+    class Meta:
+        model = StudentEmail
+
+    list_display = ('mail_type', 'subject',)
+
+admin.site.register(StudentEmail, StudentEmailAdmin)
 
 class UserAdmin(admin.ModelAdmin):
     form = UserChangeForm
