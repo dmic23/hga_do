@@ -211,6 +211,15 @@ class StudentMaterial(models.Model):
     material_updated = models.DateTimeField(auto_now=True)
     material_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='material_updated_user', null=True, blank=True)
 
+class StudentMaterialUser(models.Model):
+
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='student_material_user', null=True, blank=True)
+    material = models.ForeignKey(StudentMaterial, related_name='student_material_item', null=True, blank=True)
+    student_added = models.DateTimeField(auto_now_add=True)
+    student_added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='student_added_user', null=True, blank=True)
+    student_updated = models.DateTimeField(auto_now=True)
+    student_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='student_updated_by', null=True, blank=True)
+
 class StudentEmail(models.Model):
     MAIL_TYPE = ( 
         ('CRE', 'User Created'),

@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
 from schedule.models import CourseSchedule
 # from schedule.serializers import CourseScheduleSerializer
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser
 from users.tasks import send_basic_email
 
 class StudentGoalSerializer(serializers.ModelSerializer):
@@ -22,6 +22,13 @@ class StudentGoalSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentGoal
         fields = ('id', 'student', 'goal', 'goal_target_date', 'goal_complete', 'goal_complete_date', 'goal_notes', 'goal_created',)
+
+class SimpleStudentGoalSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentGoal
+        fields = ('id', 'goal_target_date', 'goal_complete', 'goal_complete_date', 'goal_created',)
+
 
 class StudentPracticeLogSerializer(serializers.ModelSerializer):
     practice_category_display = serializers.SerializerMethodField(source='practice_category', required=False)
@@ -35,6 +42,18 @@ class StudentPracticeLogSerializer(serializers.ModelSerializer):
     def get_practice_category_display(self, obj):
         return obj.get_practice_category_display();
 
+class SimplePracticeLogSerializer(serializers.ModelSerializer):
+    practice_category_display = serializers.SerializerMethodField(source='practice_category', required=False)
+    practice_date = serializers.DateTimeField(format=None, input_formats=None, required=False)
+
+    class Meta:
+        model = StudentPracticeLog
+        fields = ('id', 'practice_category', 'practice_category_display', 'practice_item', 'practice_time', 'practice_speed', 'practice_date', 'practice_item_created',)
+
+    def get_practice_category_display(self, obj):
+        return obj.get_practice_category_display();
+
+
 class StudentObjectiveSerializer(serializers.ModelSerializer):
     objective = serializers.CharField(required=False)
     student = serializers.CharField(required=False)
@@ -44,6 +63,13 @@ class StudentObjectiveSerializer(serializers.ModelSerializer):
         model = StudentObjective
         fields = ('id', 'student', 'objective', 'objective_complete', 'objective_complete_date', 'objective_notes', 'objective_visible', 'objective_priority', 'objective_created',)
 
+class SimpleStudentObjectiveSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentObjective
+        fields = ('id', 'objective_complete', 'objective_complete_date', 'objective_visible', 'objective_priority', 'objective_created',)
+
+
 class StudentWishListSerializer(serializers.ModelSerializer):
     wish_item = serializers.CharField(required=False)
     student = serializers.CharField(required=False)
@@ -51,6 +77,12 @@ class StudentWishListSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentWishList
         fields = ('id', 'student', 'wish_item', 'wish_item_complete', 'wish_item_complete_date', 'wish_item_notes', 'wish_item_created',)
+
+class SimpleStudentWishListSerilizer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentWishList
+        fields = ('id', 'wish_item_complete', 'wish_item_complete_date', 'wish_item_created',)
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):
@@ -73,10 +105,16 @@ class SimpleUserSerializer(serializers.ModelSerializer):
 
         return {'goal':goal, 'goal_target_date':goal_date}
 
+class StudentMaterialUserSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentMaterialUser
+        fields = ('id', 'student', 'material', 'student_added', 'student_added_by', 'student_updated', 'student_updated_by',)
 
 class StudentMaterialSerializer(serializers.ModelSerializer):
     student = serializers.CharField(required=False, read_only=True)
     student_group = SimpleUserSerializer(many=True, required=False, read_only=True)
+    student_material_item = StudentMaterialUserSerializer(many=True, required=False, read_only=True)
     file = serializers.CharField(required=False, allow_blank=True)
     material_added = serializers.DateTimeField(format=None, input_formats=None, required=False)
     material_added_by = SimpleUserSerializer(required=False)
@@ -85,7 +123,7 @@ class StudentMaterialSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StudentMaterial
-        fields = ('id', 'student', 'student_group', 'file', 'material_name', 'material_notes', 'material_added', 'material_added_by', 'material_updated', 'material_updated_by',)
+        fields = ('id', 'student', 'student_group', 'student_material_item', 'file', 'material_name', 'material_notes', 'material_added', 'material_added_by', 'material_updated', 'material_updated_by',)
 
     def create(self, validated_data):
         group = None
@@ -96,6 +134,8 @@ class StudentMaterialSerializer(serializers.ModelSerializer):
             for g in group:
                 student = User.objects.get(id=g)
                 student_material.student_group.add(student)
+                smu = StudentMaterialUser.objects.create(student=student, material=student_material, student_added_by=student_material.material_added_by)
+                smu.save()
                 send_basic_email.delay(student.id, 'UPD')
 
         send_basic_email.delay(student_material.student.id, 'UPD')
@@ -119,10 +159,14 @@ class StudentMaterialSerializer(serializers.ModelSerializer):
                     if student_id in upd_group:
                         student = User.objects.get(id=student_id)
                         instance.student_group.add(student)
+                        smu = StudentMaterialUser.objects.create(student=student, material=instance, student_updated_by=instance.material_updated_by)
+                        smu.save()
                         send_basic_email.delay(student.id, 'UPD')
                     else:
                         student = User.objects.get(id=student_id)
                         instance.student_group.remove(student)
+                        smu = StudentMaterialUser.objects.get(student=student, material=instance)
+                        smu.delete()
 
         instance.save()
 
@@ -144,6 +188,19 @@ class StudentNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentNote
         fields = ('id', 'student', 'note', 'note_created', 'note_created_by', 'note_updated',)
+
+
+class UserLeaderBoardSerializer(serializers.ModelSerializer):
+
+    play_level_display = serializers.CharField(source='get_play_level_display', required=False)
+    student_goal = SimpleStudentGoalSerializer(many=True, required=False)
+    student_log = SimplePracticeLogSerializer(many=True, required=False)
+    student_objective = SimpleStudentObjectiveSerializer(many=True, required=False)
+    student_wishlist = SimpleStudentWishListSerilizer(many=True, required=False)
+
+    class Meta:
+        model = User
+        fields = ('id', 'is_active', 'user_pic', 'first_name', 'last_name', 'email', 'play_level', 'play_level_display', 'student_goal', 'student_log', 'student_objective', 'student_wishlist',)
 
 
 class UserSerializer(serializers.ModelSerializer):

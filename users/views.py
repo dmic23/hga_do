@@ -9,12 +9,12 @@ from io import BytesIO
 from rest_framework import permissions, status, views, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser, FileUploadParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from rest_framework_jwt.settings import api_settings
 from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
-from users.serializers import UserSerializer, LocationSerializer, StudentNoteSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer
+from users.serializers import UserSerializer, SimpleUserSerializer, UserLeaderBoardSerializer, LocationSerializer, StudentNoteSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer
 from users.tasks import send_basic_email
 
 
@@ -54,6 +54,31 @@ class UserViewSet(viewsets.ModelViewSet):
                 file_dict['user_pic'] = f
 
             serializer.save(user=self.request.user, **file_dict)
+
+class SimpleUserViewSet(viewsets.ModelViewSet):
+
+    lookup_field = 'id'
+    queryset = User.objects.all()
+    serializer_class = SimpleUserSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
+
+
+class UserLeaderBoardViewSet(viewsets.ModelViewSet):
+    lookup_field = 'id'
+    queryset = User.objects.all()
+    serializer_class = UserLeaderBoardSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
+
+    def list(self, request):
+        if self.request.user.is_admin:
+            queryset = User.objects.all()
+        else:  
+            queryset = User.objects.filter(is_active=True)
+        serializer = UserLeaderBoardSerializer(queryset, many=True)
+        return Response(serializer.data)  
+
 
 class LocationViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
@@ -114,7 +139,7 @@ class StudentPracticeLogViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         if serializer.is_valid():
-            # studentId = self.request.data.pop('student')
+            studentId = self.request.data.pop('student')
             serializer.save(practice_item_updated_by=self.request.user, **self.request.data)
 
 
@@ -272,7 +297,7 @@ class LoginView(views.APIView):
             }, status=status.HTTP_401_UNAUTHORIZED)
 
 class LogoutView(views.APIView):
-    # permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.AllowAny,)
     def post(self, request, format=None):
         # user = self.request.user
         # ip = get_ip(request)

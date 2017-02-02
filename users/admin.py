@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentEmail
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser, StudentEmail
 
 class UserCreationForm(forms.ModelForm):
 
@@ -155,7 +155,15 @@ class StudentWishListAdmin(admin.ModelAdmin):
 
 admin.site.register(StudentWishList, StudentWishListAdmin)
 
+class StudentMaterialUserInline(admin.StackedInline):
+    model = StudentMaterialUser
+    extra = 0
+
 class StudentMaterialAdmin(admin.ModelAdmin):
+
+    inlines = [
+        StudentMaterialUserInline,
+    ]
 
     class Meta:
         model = StudentMaterial
