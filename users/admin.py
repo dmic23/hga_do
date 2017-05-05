@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser, StudentEmail
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser, StudentEmail, StudentLabel
 
 class UserCreationForm(forms.ModelForm):
 
@@ -55,6 +55,21 @@ class LocationAdmin(admin.ModelAdmin):
     ordering = ('city',)
 
 admin.site.register(Location, LocationAdmin)
+
+class StudentLabelInline(admin.StackedInline):
+    model = StudentLabel
+    extra = 0
+
+class StudentLabelAdmin(admin.ModelAdmin):
+
+    class Meta:
+        model = StudentLabel
+
+    list_display = ('label_name', 'label_created', 'label_created_by',)
+    list_filter = ('label_name', 'label_created', 'label_created_by',)
+    ordering = ('-label_created',)
+
+admin.site.register(StudentLabel, StudentLabelAdmin)
 
 class StudentNoteAdmin(admin.ModelAdmin):
 

@@ -13,8 +13,8 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from rest_framework_jwt.settings import api_settings
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial
-from users.serializers import UserSerializer, SimpleUserSerializer, UserLeaderBoardSerializer, LocationSerializer, StudentNoteSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentLabel
+from users.serializers import UserSerializer, SimpleUserSerializer, UserLeaderBoardSerializer, LocationSerializer, StudentNoteSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer, StudentLabelSerializer
 from users.tasks import send_basic_email
 
 
@@ -71,14 +71,6 @@ class UserLeaderBoardViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JSONWebTokenAuthentication,)
 
-    def list(self, request):
-        if self.request.user.is_admin:
-            queryset = User.objects.all()
-        else:  
-            queryset = User.objects.filter(is_active=True)
-        serializer = UserLeaderBoardSerializer(queryset, many=True)
-        return Response(serializer.data)  
-
 
 class LocationViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
@@ -103,6 +95,7 @@ class StudentNoteViewSet(viewsets.ModelViewSet):
   
     def perform_update(self, serializer):
         if serializer.is_valid():
+            print "SRD == %s"%self.request.data
             serializer.save(note_updated_by=self.request.user, **self.request.data)
 
 
@@ -154,7 +147,6 @@ class StudentObjectiveViewSet(viewsets.ModelViewSet):
         if serializer.is_valid():
             studentId = self.request.data.pop('student')
             student = User.objects.get(id=studentId)
-            # check_priority(self.request.data.get('objective_priority'))
             send_basic_email.delay(student.id, 'UPD')
             serializer.save(student=student, objective_created_by=self.request.user, **self.request.data)
 
@@ -164,16 +156,6 @@ class StudentObjectiveViewSet(viewsets.ModelViewSet):
             send_basic_email.delay(objective.student.id, 'UPD')
             serializer.save(objective_updated_by=self.request.user, **self.request.data)
 
-    # def update_priority(student, priority):
-    #     print "OBJ PRIOR === %s"% obj
-    #     try:
-    #         objectives = StudentObjective.objects.filter(student=student)
-    #         for objective in objectives:
-    #             if objective.objective_priority == priority:
-    #                 objective.objective_priority += 1
-    #                 objective.save()
-    #     except:
-    #         pass
 
 class StudentWishListViewSet(viewsets.ModelViewSet):
     lookup_field = 'id'
@@ -199,6 +181,7 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
     serializer_class = StudentMaterialSerializer
     permission_classes = (IsAuthenticated,)
     authentication_classes = (JSONWebTokenAuthentication,)
+    parser_classes = (MultiPartParser, FormParser, JSONParser,)
 
     def perform_create(self, serializer):
         if serializer.is_valid():
@@ -207,30 +190,43 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
 
             file_dict = {}
             group = []
+            label = {}
+
             for k, v in self.request.data.iteritems():
                 if 'group_student' in k:
-                    group.append(v)
+                    group.append(v.encode("utf-8"))
 
-                if k != 'file' and 'group_student' not in k:
+                if k in ['material_notes', 'material_name']:
                     item = self.request.data.get(k)
                     file_dict[k] = item
+
+                if 'student' in k:
+                    student_id = v
+                    student = User.objects.get(id=student_id)
+
+                if 'material_label' in k:
+                    label_key = k[18:-1].encode("utf-8")
+                    label_index = int(k[15])
+                    if label_index in label:
+                        label[label_index][label_key] = v.encode("utf-8")
+                    else:
+                        label[label_index] = {label_key:v.encode("utf-8")}
 
             file_dict['material_added_by'] = self.request.user
 
             for f in temp_file:
                 file_dict['file'] = f
 
-            # if group:
-            #     serializer.save(group=group, **file_dict)
-            # else:
-            student_id = file_dict.pop('student')
-            student = User.objects.get(id=student_id)
-            serializer.save(student=student, group=group, **file_dict)
+            serializer.save(student=student, group=group, label=label, **file_dict)
 
     def perform_update(self, serializer):
         if serializer.is_valid():
+
             file_dict = {}
             group = []
+            label_temp = {}
+            label = []
+
             if 'file' in self.request.data:
                 temp_file = self.request.data.pop('file')
                 for f in temp_file:
@@ -240,17 +236,31 @@ class StudentMaterialsViewSet(viewsets.ModelViewSet):
                 if 'group_student' in k:
                     group.append(v)
 
+                if 'material_label' in k:
+                    label_key = k[18:-1].encode("utf-8")
+                    label_index = int(k[15])
+                    if label_index in label_temp:
+                        label_temp[label_index][label_key] = v.encode("utf-8")
+                    else:
+                        label_temp[label_index] = {label_key:v.encode("utf-8")}
+                
                 if k != 'file' and 'group_student' not in k: 
                     item = self.request.data.get(k)
                     file_dict[k] = item
+            
+            for key,val in label_temp.iteritems():
+                label.append(val)
 
             file_dict['material_updated_by'] = self.request.user
+            serializer.save(group=group, label=label, **file_dict)
 
-            # if group:
-            #     serializer.save(group=group, **file_dict)
-            # else:
-            #     serializer.save(**file_dict)
-            serializer.save(group=group, **file_dict)
+class StudentLabelViewSet(viewsets.ModelViewSet):
+
+    lookup_field = 'id'
+    queryset = StudentLabel.objects.all()
+    serializer_class = StudentLabelSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
 
 class LoginView(views.APIView):
@@ -263,27 +273,6 @@ class LoginView(views.APIView):
             if user.is_active:
                 login(request, user)
                 serialized = UserSerializer(user)
-                # jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
-                # jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
-                # print "SER DATA === %s" %serialized.data
-                # payload = jwt_payload_handler(user)
-                # print "PAYLOAD == %s" %payload
-                # token = jwt_encode_handler(payload)
-                # print "TOKEN === %s" %token
-                # ip = get_ip(request)
-                # log(
-                #     user=user,
-                #     company=user.user_company,
-                #     not_action='user login',
-                #     obj=user,
-                #     notification=False,
-                #     extra={
-                #         'account_id':user.id,
-                #         'account_first_name':user.first_name,
-                #         'account_last_name':user.last_name,
-                #         'login_ip':ip,
-                #     }
-                # )
                 return Response(serialized.data)
             else:
                 return Response({
@@ -299,20 +288,6 @@ class LoginView(views.APIView):
 class LogoutView(views.APIView):
     permission_classes = (permissions.AllowAny,)
     def post(self, request, format=None):
-        # user = self.request.user
-        # ip = get_ip(request)
-        # log(
-        #     user=user,
-        #     company=user.user_company,
-        #     not_action='user logout',
-        #     obj=user,
-        #     notification=False,
-        #     extra={
-        #         'account_id':user.id,
-        #         'account_first_name':user.first_name,
-        #         'account_last_name':user.last_name,
-        #         'login_ip':ip,
-        #     }
-        # )
+
         logout(request)
         return Response({}, status=status.HTTP_204_NO_CONTENT)

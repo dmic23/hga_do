@@ -9,9 +9,15 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
 from schedule.models import CourseSchedule
-# from schedule.serializers import CourseScheduleSerializer
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser, StudentLabel
 from users.tasks import send_basic_email
+
+class StudentLabelSerializer(serializers.ModelSerializer):
+    label_name = serializers.CharField(required=False)
+
+    class Meta:
+        model = StudentLabel
+        fields = ('id', 'label_name',)
 
 class StudentGoalSerializer(serializers.ModelSerializer):
     goal = serializers.CharField(required=False)
@@ -120,23 +126,48 @@ class StudentMaterialSerializer(serializers.ModelSerializer):
     material_added_by = SimpleUserSerializer(required=False)
     material_updated = serializers.DateTimeField(format=None, input_formats=None, required=False)
     material_updated_by = SimpleUserSerializer(required=False)
+    material_label = StudentLabelSerializer(required=False, many=True)
 
     class Meta:
         model = StudentMaterial
-        fields = ('id', 'student', 'student_group', 'student_material_item', 'file', 'material_name', 'material_notes', 'material_added', 'material_added_by', 'material_updated', 'material_updated_by',)
+        fields = ('id', 'student', 'student_group', 'student_material_item', 'file', 'material_name', 'material_notes', 'material_added', 'material_added_by', 'material_updated', 'material_updated_by', 'material_label',)
 
     def create(self, validated_data):
         group = None
+        labels = None
+
         if 'group' in validated_data:
             group = validated_data.pop('group')
+
+        if 'label' in validated_data:
+            labels = validated_data.pop('label')
+            mat_label = validated_data.pop('material_label')
+
         student_material = StudentMaterial.objects.create(**validated_data)
+        
         if group:
             for g in group:
-                student = User.objects.get(id=g)
-                student_material.student_group.add(student)
-                smu = StudentMaterialUser.objects.create(student=student, material=student_material, student_added_by=student_material.material_added_by)
-                smu.save()
-                send_basic_email.delay(student.id, 'UPD')
+                try:
+                    student = User.objects.get(id=g)
+                    student_material.student_group.add(student)
+                    smu = StudentMaterialUser.objects.create(student=student, material=student_material, student_added_by=student_material.material_added_by)
+                    smu.save()
+                    send_basic_email.delay(student.id, 'UPD')
+                except:
+                    pass
+
+        if labels:
+            for key,val in labels.iteritems():
+                try:
+                    label, created = StudentLabel.objects.get_or_create(label_name=val['label_name'])
+                    if created:
+                        label.label_created_by = student_material.material_added_by
+                    label.save()
+                    student_material.material_label.add(label)
+                except ValueError, e:
+                    print "ERRR %s" %e
+                    pass
+
 
         send_basic_email.delay(student_material.student.id, 'UPD')
         student_material.save()
@@ -168,6 +199,22 @@ class StudentMaterialSerializer(serializers.ModelSerializer):
                         smu = StudentMaterialUser.objects.get(student=student, material=instance)
                         smu.delete()
 
+        if 'label' in validated_data:
+            upd_labels = [v['label_name'] for v in validated_data.pop('label')]
+            group_labels = instance.material_label.all().values_list('label_name', flat=True)
+            out_labels = set(upd_labels) ^ set(group_labels)
+            in_labels = set(upd_labels) & set(group_labels)
+            if set(upd_labels) != set(group_labels):
+                for label_name in out_labels:
+                    if label_name in upd_labels:
+                        label, created = StudentLabel.objects.get_or_create(label_name=label_name)
+                        if created:
+                            label.save()
+                        instance.material_label.add(label)
+                    else:
+                        label = StudentLabel.objects.get(label_name=label_name)
+                        instance.material_label.remove(label)
+
         instance.save()
 
         return instance
@@ -184,10 +231,51 @@ class StudentNoteSerializer(serializers.ModelSerializer):
     student = serializers.CharField(required=False)
     note = serializers.CharField(required=False)
     note_created_by = serializers.CharField(required=False)
+    note_label = StudentLabelSerializer(required=False, many=True)
 
     class Meta:
         model = StudentNote
-        fields = ('id', 'student', 'note', 'note_created', 'note_created_by', 'note_updated',)
+        fields = ('id', 'student', 'note', 'note_created', 'note_created_by', 'note_updated', 'note_label',)
+
+    def create(self, validated_data):
+        if 'note_label' in validated_data:
+            note_labels = validated_data.pop('note_label')
+
+        student_note = StudentNote.objects.create(**validated_data)
+
+        if note_labels:
+
+            for label in note_labels:
+                print "Create label == %s"%label
+                add_label, created = StudentLabel.objects.get_or_create(label_name=label['label_name'])
+                if created:
+                    add_label.save()
+                student_note.note_label.add(add_label)
+
+        return student_note
+
+    def update(self, instance, validated_data):
+        instance.note = validated_data.get('note', instance.note)
+        print "VAL DATA NOTE UPD === %s"%validated_data
+
+        if 'note_label' in validated_data:
+            upd_labels = [v['label_name'] for v in validated_data.pop('note_label')]
+            group_labels = instance.note_label.all().values_list('label_name', flat=True)
+            out_labels = set(upd_labels) ^ set(group_labels)
+            in_labels = set(upd_labels) & set(group_labels)
+            if set(upd_labels) != set(group_labels):
+                for label_name in out_labels:
+                    if label_name in upd_labels:
+                        label, created = StudentLabel.objects.get_or_create(label_name=label_name)
+                        if created:
+                            label.save()
+                        instance.note_label.add(label)
+                    else:
+                        label = StudentLabel.objects.get(label_name=label_name)
+                        instance.note_label.remove(label)
+        instance.save()
+
+        return instance
 
 
 class UserLeaderBoardSerializer(serializers.ModelSerializer):

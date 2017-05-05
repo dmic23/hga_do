@@ -11,6 +11,16 @@ def get_upload_file_name(instance, filename):
 
     return settings.UPLOAD_FILE_PATTERN % (str(time()).replace('.','_'), filename)
 
+
+class StudentLabel(models.Model):
+
+    label_name = models.CharField(max_length=50)
+    label_created = models.DateTimeField(auto_now_add=True)
+    label_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='label_created_user', null=True, blank=True)
+
+    def __unicode__(self):
+        return smart_unicode(self.label_name)
+
 class Location(models.Model):
     name = models.CharField(max_length=50, null=True, blank=True)
     addr1 = models.CharField(max_length=50, null=True, blank=True)
@@ -34,6 +44,7 @@ class StudentNote(models.Model):
     note_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='note_created_user')
     note_updated = models.DateTimeField(auto_now=True)
     note_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='note_updated_user', null=True, blank=True)
+    note_label = models.ManyToManyField(StudentLabel, related_name='label_note', blank=True)
 
     def __unicode__(self):
         return smart_unicode(self.id)
@@ -210,6 +221,7 @@ class StudentMaterial(models.Model):
     material_added_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='material_added_user', null=True, blank=True)
     material_updated = models.DateTimeField(auto_now=True)
     material_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='material_updated_user', null=True, blank=True)
+    material_label = models.ManyToManyField(StudentLabel, related_name='label_material', blank=True)
 
 class StudentMaterialUser(models.Model):
 
@@ -238,3 +250,10 @@ class StudentEmail(models.Model):
     title = models.CharField(max_length=250, null=True, blank=True)
     body = models.TextField(null=True, blank=True)
     footer = models.TextField(null=True, blank=True)
+
+
+
+
+
+
+
