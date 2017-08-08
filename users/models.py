@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
+from time import time
 from django.conf import settings
 from django.contrib.auth.models import User, AbstractBaseUser, BaseUserManager
 from django.core.files.storage import default_storage
 from django.db import models
 from django.utils.encoding import smart_unicode
-from time import time
+# from schedule.models import CourseSchedule
+
 
 def get_upload_file_name(instance, filename):
 
@@ -223,6 +225,9 @@ class StudentMaterial(models.Model):
     material_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='material_updated_user', null=True, blank=True)
     material_label = models.ManyToManyField(StudentLabel, related_name='label_material', blank=True)
 
+    def __unicode__(self):
+        return smart_unicode(self.material_name)
+
 class StudentMaterialUser(models.Model):
 
     student = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='student_material_user', null=True, blank=True)
@@ -251,7 +256,37 @@ class StudentEmail(models.Model):
     body = models.TextField(null=True, blank=True)
     footer = models.TextField(null=True, blank=True)
 
+from schedule.models import CourseSchedule
+class StudentFeedback(models.Model):
 
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='student_feedback')
+    feedback_course = models.ForeignKey(CourseSchedule, related_name='feedback_scheduled_course', null=True, blank=True)
+    feedback_text = models.TextField(null=True, blank=True)
+    feedback_created = models.DateTimeField(auto_now_add=True)
+    feedback_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='feedback_created_user')
+    feedback_updated = models.DateTimeField(auto_now=True)
+    feedback_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='feedback_updated_user', null=True, blank=True)
+
+    def __unicode__(self):
+        return smart_unicode(self.id)
+
+class StudentFeedbackMaterial(models.Model):
+
+    student_feedback = models.ForeignKey(StudentFeedback, related_name='material_feedback')
+    feedback_material = models.FileField(upload_to=get_upload_file_name, null=True, blank=True)
+    feedback_material_created = models.DateTimeField(auto_now_add=True)
+    feedback_material_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='feedback_material_created_user')
+    feedback_material_updated = models.DateTimeField(auto_now=True)
+    feedback_material_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='feedback_material_updated_user', null=True, blank=True)
+
+class StudentFeedbackMessage(models.Model):
+
+    student_feedback = models.ForeignKey(StudentFeedback, related_name='message_feedback')
+    feedback_message = models.TextField(null=True, blank=True)
+    feedback_message_created = models.DateTimeField(auto_now_add=True)
+    feedback_message_created_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='feedback_message_created_user')
+    feedback_message_updated = models.DateTimeField(auto_now=True)
+    feedback_message_updated_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='feedback_message_updated_user', null=True, blank=True)
 
 
 

@@ -6,9 +6,10 @@ from django.contrib.auth import views
 from rest_framework import routers
 from rest_framework_jwt.views import obtain_jwt_token,refresh_jwt_token, verify_jwt_token
 from student_portal.views import IndexView
-from forum.views import CategoryViewSet, TopicViewSet, MessageViewSet
+from forum.views import CategoryViewSet, TopicViewSet, ForumMessageViewSet
+from messaging.views import MessageViewSet
 from schedule.views import CourseViewSet, CourseScheduleViewSet, RemoveCourseScheduleViewSet
-from users.views import LoginView, LogoutView, UserViewSet, LocationViewSet, StudentNoteViewSet, StudentGoalsViewSet, StudentPracticeLogViewSet, StudentObjectiveViewSet, StudentWishListViewSet, StudentMaterialsViewSet, SimpleUserViewSet, UserLeaderBoardViewSet, StudentLabelViewSet
+from users.views import LoginView, LogoutView, UserViewSet, LocationViewSet, StudentNoteViewSet, StudentGoalsViewSet, StudentPracticeLogViewSet, StudentObjectiveViewSet, StudentWishListViewSet, StudentMaterialsViewSet, SimpleUserViewSet, UserLeaderBoardViewSet, StudentLabelViewSet, StudentFeedbackViewSet, StudentFeedbackMaterialViewSet
 
 router = routers.SimpleRouter()
 router.register(r'users', UserViewSet)
@@ -16,6 +17,8 @@ router.register(r'users-simple', SimpleUserViewSet)
 router.register(r'users-leaderboard', UserLeaderBoardViewSet)
 router.register(r'locations', LocationViewSet)
 router.register(r'student-notes', StudentNoteViewSet)
+router.register(r'student-feedback', StudentFeedbackViewSet)
+router.register(r'student-feedback-material', StudentFeedbackMaterialViewSet)
 router.register(r'student-goals', StudentGoalsViewSet)
 router.register(r'student-practice-logs', StudentPracticeLogViewSet)
 router.register(r'student-objectives', StudentObjectiveViewSet)
@@ -24,7 +27,8 @@ router.register(r'student-materials', StudentMaterialsViewSet)
 router.register(r'student-label', StudentLabelViewSet)
 router.register(r'forum-category', CategoryViewSet)
 router.register(r'forum-topics', TopicViewSet)
-router.register(r'forum-message', MessageViewSet)
+router.register(r'forum-message', ForumMessageViewSet)
+router.register(r'messages', MessageViewSet)
 router.register(r'courses', CourseViewSet)
 router.register(r'course-schedule', CourseScheduleViewSet)
 router.register(r'course-schedule-remove', RemoveCourseScheduleViewSet)
@@ -33,7 +37,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/v1/', include(router.urls)),
 
-    url(r'^$',  IndexView.as_view(), name='index'),
+    url(r'^$', IndexView.as_view(), name='index'),
 
     url(r'^api/v1/auth/login/$', LoginView.as_view(), name='login'),
     url(r'^api/v1/auth/logout/$', LogoutView.as_view(), name='logout'),

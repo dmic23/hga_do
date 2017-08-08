@@ -13,8 +13,9 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework_jwt.authentication import JSONWebTokenAuthentication
 from rest_framework_jwt.settings import api_settings
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentLabel
-from users.serializers import UserSerializer, SimpleUserSerializer, UserLeaderBoardSerializer, LocationSerializer, StudentNoteSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer, StudentLabelSerializer
+from schedule.models import Course, CourseSchedule
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentLabel, StudentFeedback, StudentFeedbackMessage, StudentFeedbackMaterial
+from users.serializers import UserSerializer, SimpleUserSerializer, UserLeaderBoardSerializer, LocationSerializer, StudentNoteSerializer, StudentGoalSerializer, StudentPracticeLogSerializer, StudentObjectiveSerializer, StudentWishListSerializer, StudentMaterialSerializer, StudentLabelSerializer, StudentFeedbackSerializer, StudentFeedbackMessageSerializer, StudentFeedbackMaterialSerializer
 from users.tasks import send_basic_email
 
 
@@ -95,8 +96,67 @@ class StudentNoteViewSet(viewsets.ModelViewSet):
   
     def perform_update(self, serializer):
         if serializer.is_valid():
-            print "SRD == %s"%self.request.data
             serializer.save(note_updated_by=self.request.user, **self.request.data)
+
+class StudentFeedbackViewSet(viewsets.ModelViewSet):
+    lookup_field = 'id'
+    queryset = StudentFeedback.objects.all()
+    serializer_class = StudentFeedbackSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
+
+    def perform_create(self, serializer):
+        if serializer.is_valid():
+            file_dict = {}
+            files = []
+
+            for k,v in self.request.data.iteritems():
+                if 'feedback_material' in k:
+                    files.append(v)
+                if 'feedback_course' in k:
+                    feedback_course_id = v
+                    file_dict['feedback_course'] = CourseSchedule.objects.get(id=feedback_course_id)
+                if 'student' in k:
+                    student_id = v
+                    file_dict['student'] = User.objects.get(id=student_id)
+                if 'feedback_text' in k:
+                    file_dict['feedback_text'] = v
+
+            file_dict['feedback_created_by'] = self.request.user
+
+            serializer.save(files=files, **file_dict)
+  
+    def perform_update(self, serializer):
+        if serializer.is_valid():
+            file_dict = {}
+            files = []
+
+            for k,v in self.request.data.iteritems():
+                if 'feedback_material' in k:
+                    files.append(v)
+                if 'feedback_course' in k:
+                    feedback_course_id = v
+                    file_dict['feedback_course'] = CourseSchedule.objects.get(id=feedback_course_id)
+                if 'feedback_text' in k:
+                    file_dict['feedback_text'] = v
+
+            file_dict['feedback_updated_by'] = self.request.user
+            serializer.save(files=files, **file_dict)
+
+class StudentFeedbackMessageViewSet(viewsets.ModelViewSet):
+    lookup_field = 'id'
+    queryset = StudentFeedbackMessage.objects.all()
+    serializer_class = StudentFeedbackMessageSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
+
+
+class StudentFeedbackMaterialViewSet(viewsets.ModelViewSet):
+    lookup_field = 'id'
+    queryset = StudentFeedbackMaterial.objects.all()
+    serializer_class = StudentFeedbackMaterialSerializer
+    permission_classes = (IsAuthenticated,)
+    authentication_classes = (JSONWebTokenAuthentication,)
 
 
 class StudentGoalsViewSet(viewsets.ModelViewSet):

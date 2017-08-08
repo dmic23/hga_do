@@ -8,8 +8,9 @@ from django.utils import timezone
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.validators import UniqueValidator
+# from messaging.serializers import MessageSerializer
 from schedule.models import CourseSchedule
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser, StudentLabel
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser, StudentLabel, StudentFeedback, StudentFeedbackMessage, StudentFeedbackMaterial
 from users.tasks import send_basic_email
 
 class StudentLabelSerializer(serializers.ModelSerializer):
@@ -92,7 +93,6 @@ class SimpleStudentWishListSerilizer(serializers.ModelSerializer):
 
 
 class SimpleUserSerializer(serializers.ModelSerializer):
-
     recent_goal = serializers.SerializerMethodField()
     
     class Meta:
@@ -246,7 +246,6 @@ class StudentNoteSerializer(serializers.ModelSerializer):
         if note_labels:
 
             for label in note_labels:
-                print "Create label == %s"%label
                 add_label, created = StudentLabel.objects.get_or_create(label_name=label['label_name'])
                 if created:
                     add_label.save()
@@ -256,7 +255,6 @@ class StudentNoteSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.note = validated_data.get('note', instance.note)
-        print "VAL DATA NOTE UPD === %s"%validated_data
 
         if 'note_label' in validated_data:
             upd_labels = [v['label_name'] for v in validated_data.pop('note_label')]
@@ -276,6 +274,73 @@ class StudentNoteSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+
+class StudentFeedbackMaterialSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentFeedbackMaterial
+        fields = ('id', 'student_feedback', 'feedback_material', 'feedback_material_created', 'feedback_material_created_by',
+            'feedback_material_updated', 'feedback_material_updated_by',)
+
+class StudentFeedbackMessageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = StudentFeedbackMessage
+        fields = ('id', 'student_feedback', 'feedback_message', 'feedback_message_created', 'feedback_message_created_by',
+            'feedback_message_updated', 'feedback_message_updated_by',)
+
+class StudentFeedbackSerializer(serializers.ModelSerializer):
+    feedback_created_by = serializers.CharField(required=False)
+    student = serializers.CharField(required=False, read_only=True)
+    # message_feedback = StudentFeedbackMessageSerializer(many=True, required=False)
+    material_feedback = StudentFeedbackMaterialSerializer(many=True, required=False, read_only=True)
+    feedback_course = serializers.SerializerMethodField(required=False)
+
+    class Meta:
+        model = StudentFeedback
+        fields = ('id', 'student', 'feedback_course', 'feedback_text', 'feedback_created',
+            'feedback_created_by', 'feedback_updated', 'feedback_updated_by', 'material_feedback',)
+        ordering = ['-feedback_created']
+
+    def get_feedback_course(self, obj):
+        if obj.feedback_course:
+            return {'id': obj.feedback_course.id, 
+                'course_title': obj.feedback_course.course.course_title,
+                'schedule_date': obj.feedback_course.schedule_date,
+                'schedule_start_time': obj.feedback_course.schedule_start_time
+            }
+        else:
+            return {}
+
+    def create(self, validated_data):
+        files = validated_data.pop('files')
+
+        student_feedback = StudentFeedback.objects.create(**validated_data)
+        student_feedback.save()
+
+        if files:
+            for file in files:
+                feedback_material = StudentFeedbackMaterial.objects.create(student_feedback=student_feedback, feedback_material=file, feedback_material_created_by=student_feedback.feedback_created_by)
+                feedback_material.save()
+
+        return student_feedback
+
+    def update(self, instance, validated_data):
+        print "VAL DATA = {}".format(validated_data)
+        files = validated_data.pop('files')
+
+        instance.feedback_text = validated_data.get('feedback_text', instance.feedback_text)
+        instance.feedback_course = validated_data.get('feedback_course', instance.feedback_course)
+        instance.feedback_updated_by = validated_data.get('feedback_updated_by', instance.feedback_updated_by)
+
+        if files:
+            for file in files:
+                feedback_material = StudentFeedbackMaterial.objects.create(student_feedback=instance, feedback_material=file, feedback_material_created_by=instance.feedback_updated_by)
+                feedback_material.save()       
+
+        instance.save()
+        return instance
+
 
 
 class UserLeaderBoardSerializer(serializers.ModelSerializer):
@@ -304,11 +369,13 @@ class UserSerializer(serializers.ModelSerializer):
     next_course = serializers.SerializerMethodField(required=False)
     location = LocationSerializer(required=False)
     student_note = StudentNoteSerializer(many=True, required=False)
+    student_feedback = StudentFeedbackSerializer(many=True, required=False)
+    # student_message = MessageSerializer(many=True, required=False)
     
     class Meta:
         model = User
-        fields = ('id', 'user_created', 'user_updated', 'is_active', 'is_admin', 'is_staff', 'username', 'first_name', 'last_name', 'user_pic', 'date_of_birth', 'user_credit', 'next_course',
-                'location', 'play_level', 'play_level_display', 'email', 'student_goal', 'student_log', 'student_objective', 'student_wishlist', 'student_material', 'student_note',
+        fields = ('id', 'user_created', 'user_updated', 'is_active', 'is_admin', 'is_staff', 'username', 'first_name', 'last_name', 'user_pic', 'date_of_birth', 'user_credit', 'recurring_credit', 'next_course',
+                'location', 'play_level', 'play_level_display', 'email', 'student_goal', 'student_log', 'student_objective', 'student_wishlist', 'student_material', 'student_note', 'student_feedback',
                 'course_reminder', 'practice_reminder', 'user_update',)
         read_only_fields = ('id', 'user_created', 'is_admin',)
 
@@ -336,6 +403,7 @@ class UserSerializer(serializers.ModelSerializer):
         instance.user_pic = validated_data.get('user_pic', instance.user_pic)
         instance.user_credit = validated_data.get('user_credit', instance.user_credit)
         instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)        
+        instance.recurring_credit = validated_data.get('recurring_credit', instance.recurring_credit)
         instance.user_updated_by = validated_data.pop('user')
 
         if validated_data.get('is_active') == 'true':

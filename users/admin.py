@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import ReadOnlyPasswordHashField
-from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser, StudentEmail, StudentLabel
+from users.models import User, Location, StudentNote, StudentGoal, StudentPracticeLog, StudentObjective, StudentWishList, StudentMaterial, StudentMaterialUser, StudentEmail, StudentLabel, StudentFeedback, StudentFeedbackMaterial, StudentFeedbackMessage
 
 class UserCreationForm(forms.ModelForm):
 
@@ -45,6 +45,7 @@ class UserChangeForm(forms.ModelForm):
 
         return self.initial["password"]
 
+
 class LocationAdmin(admin.ModelAdmin):
 
     class Meta:
@@ -81,6 +82,31 @@ class StudentNoteAdmin(admin.ModelAdmin):
     ordering = ('-note_created',)
 
 admin.site.register(StudentNote, StudentNoteAdmin)
+
+class StudentFeedbackMessageInline(admin.StackedInline):
+    model = StudentFeedbackMessage
+    extra = 0
+
+class StudentFeedbackMaterialInline(admin.TabularInline):
+    model = StudentFeedbackMaterial
+    extra = 0
+
+class StudentFeedbackAdmin(admin.ModelAdmin):
+
+    class Meta:
+        model = StudentFeedback
+
+    inlines = [
+        StudentFeedbackMessageInline,
+        StudentFeedbackMaterialInline
+    ]
+
+    list_display = ('feedback_created', 'student', 'feedback_course',)
+    list_filter = ('feedback_created', 'student', 'feedback_course',)
+    ordering = ('-feedback_created',)
+
+admin.site.register(StudentFeedback, StudentFeedbackAdmin)
+
 
 class StudentEmailAdmin(admin.ModelAdmin):
 
